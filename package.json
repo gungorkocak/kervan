@@ -1,0 +1,22 @@
+{
+  "name": "bs-test-parcel",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "npx parcel index.html"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "bs-platform": "^5.0.6",
+    "bsb-js": "^1.1.7",
+    "parcel-bundler": "^1.12.3"
+  },
+  "dependencies": {
+    "app": "^0.1.0",
+    "hyperapp": "^2.0.0-beta.22"
+  }
+}
