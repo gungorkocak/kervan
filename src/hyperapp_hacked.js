@@ -400,7 +400,20 @@ export var Lazy = function(props) {
   }
 }
 
+var unwrapBsProps = function (props) {
+  return props.reduce(
+    function(newProps, prop) {
+      if (prop) {
+        newProps[prop[0][0]] = prop[0][1]
+      }
+      return newProps
+    },
+    {}
+  )
+}
+
 export var h = function(name, props) {
+
   for (var vnode, rest = [], children = [], i = arguments.length; i-- > 2; ) {
     rest.push(arguments[i])
   }
@@ -416,7 +429,8 @@ export var h = function(name, props) {
     }
   }
 
-  props = props || EMPTY_OBJ
+  props = props ? unwrapBsProps(props) : EMPTY_OBJ
+  // props = props || EMPTY_OBJ
 
   return typeof name === "function"
     ? name(props, children)
