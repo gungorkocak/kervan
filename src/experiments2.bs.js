@@ -2,7 +2,6 @@
 'use strict';
 
 var $$Array = require("bs-platform/lib/js/array.js");
-var Curry = require("bs-platform/lib/js/curry.js");
 var Hyperapp = require("hyperapp");
 var Caml_int32 = require("bs-platform/lib/js/caml_int32.js");
 
@@ -29,32 +28,6 @@ function multiply(state, param) {
     return state;
   }
 }
-
-var x = /* tuple */[
-  increment,
-  undefined
-];
-
-var y = /* tuple */[
-  set,
-  42
-];
-
-function update(param, state) {
-  return Curry._2(param[0], state, param[1]);
-}
-
-var state = update(/* tuple */[
-      set,
-      /* record */[/* num */42]
-    ], 10);
-
-var next_state = update(/* tuple */[
-      increment,
-      undefined
-    ], state);
-
-console.log(next_state);
 
 function hh(tag, props, children) {
   return Hyperapp.h(tag, props, $$Array.of_list(children));
@@ -130,14 +103,11 @@ Hyperapp.app({
 
 var init = 0;
 
+exports.init = init;
 exports.increment = increment;
 exports.decrement = decrement;
 exports.set = set;
 exports.multiply = multiply;
-exports.x = x;
-exports.y = y;
-exports.update = update;
 exports.hh = hh;
-exports.init = init;
 exports.view = view;
-/* state Not a pure module */
+/*  Not a pure module */

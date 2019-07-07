@@ -7,36 +7,6 @@ type num_record =
 
 type 'a msg = (state -> 'a option -> state) * 'a option
 
-let increment (state: state) _ = state + 1
-
-let decrement state _ = state - 1
-
-
-let set (state : state) (num : num_record option) = match num with
-  | Some num -> num.num
-  | None -> state
-
-let multiply state = function
-  | Some num -> state * num
-  | None -> state
-
-let x =
-  (increment, None)
-
-let y =
-  (set, 42)
-
-let update (f, props) state =
-  f state props
-
-let () =
-  let state = update (set, Some { num=42 }) 10 in
-  let next_state = update (increment, None) state in
-  Js.log next_state
-
-
-(* below are hcaml *)
-
 type dom
 type id
 type action
@@ -59,18 +29,28 @@ type program =
   ; node : id
   } [@@bs.deriving abstract]
 
-type program_to_js = < init : int; node : id; view : state -> vdom > Js.t
-
 external dom : dom = "document" [@@bs.val]
 external get_by_id : dom -> string -> id = "getElementById" [@@bs.send]
 external h : tagname -> 'a props -> vdom array -> vdom = "h" [@@bs.module "hyperapp"]
 external app : program -> unit = "app" [@@bs.module "hyperapp"]
 
+let init = 0
+
+let increment state _ = state + 1
+
+let decrement state _ = state - 1
+
+let set (state : state) (num : num_record option) = match num with
+  | Some num -> num.num
+  | None -> state
+
+let multiply state = function
+  | Some num -> state * num
+  | None -> state
+
 
 let hh tag props children =
   h tag props (Array.of_list children)
-
-let init = 0
 
 let view (state) =
   hh "div"
