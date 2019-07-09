@@ -1,4 +1,3 @@
-
 type state = int
 
 type dom
@@ -19,34 +18,23 @@ module Cmd = struct
 end
 
 module EffectTest = struct
-  type 'msg t = [
-    | `Log of (string -> unit) * string
-    | `Delay of (int * 'msg -> ('msg -> unit -> unit) -> unit) * (int * 'msg)
-  ]
+  type 'msg delay = (int * 'msg -> ('msg -> unit -> unit) -> unit)
+  type log = string -> unit
 
-  let log_effect str =
+  let log str =
     Js.log str
 
-  let log str = `Log (log_effect, str)
-
-  let delay_effect (ms, msg) dispatch =
+  let delay (ms, msg) dispatch =
     let _ = Js.Global.setTimeout (dispatch msg) ms in
     ()
-
-  let delay ms msg = `Delay (delay_effect, (ms, msg))
 end
 
 module SubTest = struct
-  type 'msg t = [
-    | `Every of (('msg -> unit -> unit) -> int * 'msg ->  (unit -> unit)) * (int * 'msg)
-  ]
+  type 'msg every = (('msg -> unit -> unit) -> int * 'msg ->  (unit -> unit))
 
-  let every_effect dispatch (ms, msg) =
+  let every dispatch (ms, msg) =
     let id = Js.Global.setInterval (dispatch msg) ms in
     fun () -> Js.Global.clearInterval id
-
-
-  let every ms msg = `Every (every_effect, (ms, msg))
 end
 
 type msg =
@@ -55,16 +43,16 @@ type msg =
   | Set of int
   | Mult of int
   | DelayedIncrement
+  | Log of string
 
-type fx = [
-  | `NoFx
-  | msg EffectTest.t
-]
+type fx =
+  | NoFx
+  | Delay of (msg EffectTest.delay) * (int * msg)
+  | Log of EffectTest.log * string
 
-type subscriptions = [
-  | `NoSub
-  | msg SubTest.t
-]
+type subscriptions =
+  | NoSub
+  | Every of (msg SubTest.every) * (int * msg)
 
 
 type prop =
@@ -95,23 +83,23 @@ external app : program -> unit = "app" [@@bs.module "./hyperapp_hacked"]
 
 let init = 0
 
-let subscriptions state =
+let subscriptions _state =
   [|
-    SubTest.every 1000 Increment
+    Every (SubTest.every, (1000, Increment))
   |]
 
 let update state = function
-  | Increment -> state + 1, `NoFx
-  | Decrement -> state - 1, `NoFx
-  | Set num -> num, `NoFx
-  | Mult num -> state * num, EffectTest.delay 1000 (Set 99)
-  | DelayedIncrement -> state, EffectTest.log "ahmet naber?"
+  | Increment -> state + 1, NoFx
+  | Decrement -> state - 1, NoFx
+  | Set num -> num, NoFx
+  | Mult num -> state * num, Delay (EffectTest.delay, (1000, (Set 42)))
+  | Log str -> state, Log (EffectTest.log, str)
 
 
 let hh tag props children =
   h tag (Array.of_list props) (Array.of_list children)
 
-let view (state) =
+let view state =
   hh "div"
     [
       Attr("id", "garip")
@@ -129,9 +117,9 @@ let view (state) =
         [ Text("+")]
     ; hh "button"
         [
-          Handler("onclick", DelayedIncrement)
+          Handler("onclick", (Log (string_of_int state)))
         ]
-        [ Text("~1000 |> +")]
+        [ Text("Log")]
     ; hh "button"
         [
           Attr("id", "gulizar")

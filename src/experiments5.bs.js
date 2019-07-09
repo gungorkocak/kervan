@@ -6,6 +6,7 @@ var Block = require("bs-platform/lib/js/block.js");
 var Curry = require("bs-platform/lib/js/curry.js");
 var Caml_int32 = require("bs-platform/lib/js/caml_int32.js");
 var Hyperapp_hacked = require("./hyperapp_hacked");
+var Caml_builtin_exceptions = require("bs-platform/lib/js/caml_builtin_exceptions.js");
 
 function one(effect) {
   return /* One */[effect];
@@ -16,47 +17,22 @@ var Cmd = /* module */[
   /* one */one
 ];
 
-function log_effect(str) {
+function log(str) {
   console.log(str);
   return /* () */0;
 }
 
-function log(str) {
-  return /* `Log */[
-          3804260,
-          /* tuple */[
-            log_effect,
-            str
-          ]
-        ];
-}
-
-function delay_effect(param, dispatch) {
+function delay(param, dispatch) {
   setTimeout(Curry._1(dispatch, param[1]), param[0]);
   return /* () */0;
 }
 
-function delay(ms, msg) {
-  return /* `Delay */[
-          -363575453,
-          /* tuple */[
-            delay_effect,
-            /* tuple */[
-              ms,
-              msg
-            ]
-          ]
-        ];
-}
-
 var EffectTest = /* module */[
-  /* log_effect */log_effect,
   /* log */log,
-  /* delay_effect */delay_effect,
   /* delay */delay
 ];
 
-function every_effect(dispatch, param) {
+function every(dispatch, param) {
   var id = setInterval(Curry._1(dispatch, param[1]), param[0]);
   return (function (param) {
       clearInterval(id);
@@ -64,23 +40,7 @@ function every_effect(dispatch, param) {
     });
 }
 
-function every(ms, msg) {
-  return /* `Every */[
-          150092667,
-          /* tuple */[
-            every_effect,
-            /* tuple */[
-              ms,
-              msg
-            ]
-          ]
-        ];
-}
-
-var SubTest = /* module */[
-  /* every_effect */every_effect,
-  /* every */every
-];
+var SubTest = /* module */[/* every */every];
 
 function h(prim, prim$1, prim$2) {
   return Hyperapp_hacked.h(prim, prim$1, prim$2);
@@ -91,15 +51,12 @@ function app(prim) {
   return /* () */0;
 }
 
-function subscriptions(state) {
-  return /* array */[/* `Every */[
-            150092667,
+function subscriptions(_state) {
+  return /* array */[/* Every */[
+            every,
             /* tuple */[
-              every_effect,
-              /* tuple */[
-                1000,
-                /* Increment */0
-              ]
+              1000,
+              /* Increment */0
             ]
           ]];
 }
@@ -110,45 +67,52 @@ function update(state, param) {
       case 0 : 
           return /* tuple */[
                   state + 1 | 0,
-                  /* NoFx */870521875
+                  /* NoFx */0
                 ];
       case 1 : 
           return /* tuple */[
                   state - 1 | 0,
-                  /* NoFx */870521875
+                  /* NoFx */0
+                ];
+      case 2 : 
+          throw [
+                Caml_builtin_exceptions.match_failure,
+                /* tuple */[
+                  "experiments5.ml",
+                  91,
+                  19
+                ]
+              ];
+      
+    }
+  } else {
+    switch (param.tag | 0) {
+      case 0 : 
+          return /* tuple */[
+                  param[0],
+                  /* NoFx */0
+                ];
+      case 1 : 
+          return /* tuple */[
+                  Caml_int32.imul(state, param[0]),
+                  /* Delay */Block.__(0, [
+                      delay,
+                      /* tuple */[
+                        1000,
+                        /* Set */Block.__(0, [42])
+                      ]
+                    ])
                 ];
       case 2 : 
           return /* tuple */[
                   state,
-                  /* `Log */[
-                    3804260,
-                    /* tuple */[
-                      log_effect,
-                      "ahmet naber?"
-                    ]
-                  ]
+                  /* Log */Block.__(1, [
+                      log,
+                      param[0]
+                    ])
                 ];
       
     }
-  } else if (param.tag) {
-    return /* tuple */[
-            Caml_int32.imul(state, param[0]),
-            /* `Delay */[
-              -363575453,
-              /* tuple */[
-                delay_effect,
-                /* tuple */[
-                  1000,
-                  /* Set */Block.__(0, [99])
-                ]
-              ]
-            ]
-          ];
-  } else {
-    return /* tuple */[
-            param[0],
-            /* NoFx */870521875
-          ];
   }
 }
 
@@ -189,11 +153,11 @@ function view(state) {
                   hh("button", /* :: */[
                         /* Handler */Block.__(1, [/* tuple */[
                               "onclick",
-                              /* DelayedIncrement */2
+                              /* Log */Block.__(2, [String(state)])
                             ]]),
                         /* [] */0
                       ], /* :: */[
-                        /* Text */["~1000 |> +"],
+                        /* Text */["Log"],
                         /* [] */0
                       ]),
                   /* :: */[

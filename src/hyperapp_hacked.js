@@ -455,7 +455,9 @@ export var app = function(props, enhance) {
     if (state !== newState) {
       state = newState
       if (subscriptions) {
-        subs = patchSubs(subs, batch([subscriptions(state)]), dispatch)
+        var newSubs = subscriptions(state).map(s => s)
+        subs = patchSubs(subs, batch([newSubs]), dispatch)
+        // subs = patchSubs(subs, batch([subscriptions(state)]), dispatch)
       }
       if (view && !lock) defer(render, (lock = true))
     }
@@ -463,7 +465,16 @@ export var app = function(props, enhance) {
   }
 
   var dispatch = function(action, props, shouldPassUpdate) {
-    return shouldPassUpdate ? setState(action) : setState(update(state, action))
+    if (shouldPassUpdate) {
+      setState(action)
+      return
+    }
+    else {
+      const [nextState, fx] = update(state, action)
+      fx && fx[0] && fx[0](fx[1], dispatch)
+      setState(nextState)
+      return
+    }
   }
 
   // var dispatch = (enhance ||
