@@ -1,22 +1,34 @@
+(* Main kervan modules *)
 
-type state = int
+module App =
+struct
+  type tagname = string
 
-type dom
-type id
-type tagname = string
+  type 'msg prop =
+    | Attr of (string * string)
+    | Handler of (string * 'msg)
 
-module Cmd = struct
-  type effect_fn = string -> unit
-  type effect = effect_fn * string
+  type vdom =
+    | VDom
+    | Text of string
 
-  type t =
-    | NoCmd
-    | One of effect
+  type ('state, 'msg, 'fx, 'subs, 'node) program =
+    { init : unit -> 'state
+    ; update : 'state -> 'msg -> 'state * 'fx
+    ; view : 'state -> vdom
+    ; subscriptions : 'state -> 'subs array
+    ; node : 'node
+    }
+  [@@bs.deriving {jsConverter = newType}]
 
-  let none = NoCmd
-  let one effect = One effect
+  external h : tagname -> 'msg prop array -> vdom array -> vdom = "h" [@@bs.module "./hyperapp_hacked"]
+  external app_ext : ('state, 'msg, 'fx, 'subs, 'node) abs_program -> unit = "app" [@@bs.module "./hyperapp_hacked"]
 
+  let app program = app_ext (programToJs program)
 end
+
+
+(* Effect and Sub Tests *)
 
 module EffectTest = struct
   type 'msg t = [
@@ -49,6 +61,17 @@ module SubTest = struct
   let every ms msg = `Every (every_effect, (ms, msg))
 end
 
+(* Example App *)
+
+type dom
+type id
+
+external dom : dom = "document" [@@bs.val]
+external get_by_id : dom -> string -> id = "getElementById" [@@bs.send]
+
+
+type state = int
+
 type msg =
   | Increment
   | Decrement
@@ -66,34 +89,7 @@ type subscriptions = [
   | msg SubTest.t
 ]
 
-
-type prop =
-  | Attr of (string * string)
-  | Handler of (string * msg)
-
-type props = prop list
-
-type vdom =
-  | VDom
-  | Text of string
-
-type program =
-  { init : state
-  ; update : state -> msg -> state * fx
-  ; view : state -> vdom
-  ; subscriptions : state -> subscriptions array
-  ; node : id
-  } [@@bs.deriving abstract]
-
-type action
-
-
-external dom : dom = "document" [@@bs.val]
-external get_by_id : dom -> string -> id = "getElementById" [@@bs.send]
-external h : tagname -> prop array -> vdom array -> vdom = "h" [@@bs.module "./hyperapp_hacked"]
-external app : program -> unit = "app" [@@bs.module "./hyperapp_hacked"]
-
-let init = 0
+let init () = 0
 
 let subscriptions state =
   [|
@@ -109,7 +105,7 @@ let update state = function
 
 
 let hh tag props children =
-  h tag (Array.of_list props) (Array.of_list children)
+  App.h tag (Array.of_list props) (Array.of_list children)
 
 let view (state) =
   hh "div"
@@ -153,4 +149,10 @@ let view (state) =
 
 
 let () =
-  app (program ~init:init ~update:update ~view:view ~subscriptions:subscriptions ~node:(get_by_id dom "app"))
+  App.app
+    { init=init
+    ; update=update
+    ; view=view
+    ; subscriptions=subscriptions
+    ; node=(get_by_id dom "app")
+    }

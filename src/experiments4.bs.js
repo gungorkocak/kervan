@@ -7,13 +7,47 @@ var Curry = require("bs-platform/lib/js/curry.js");
 var Caml_int32 = require("bs-platform/lib/js/caml_int32.js");
 var Hyperapp_hacked = require("./hyperapp_hacked");
 
-function one(effect) {
-  return /* One */[effect];
+function programToJs(param) {
+  return {
+          init: param[/* init */0],
+          update: param[/* update */1],
+          view: param[/* view */2],
+          subscriptions: param[/* subscriptions */3],
+          node: param[/* node */4]
+        };
 }
 
-var Cmd = /* module */[
-  /* none : NoCmd */0,
-  /* one */one
+function programFromJs(param) {
+  return /* record */[
+          /* init */param.init,
+          /* update */param.update,
+          /* view */param.view,
+          /* subscriptions */param.subscriptions,
+          /* node */param.node
+        ];
+}
+
+function h(prim, prim$1, prim$2) {
+  return Hyperapp_hacked.h(prim, prim$1, prim$2);
+}
+
+function app_ext(prim) {
+  Hyperapp_hacked.app(prim);
+  return /* () */0;
+}
+
+function app(program) {
+  var prim = programToJs(program);
+  Hyperapp_hacked.app(prim);
+  return /* () */0;
+}
+
+var App = /* module */[
+  /* programToJs */programToJs,
+  /* programFromJs */programFromJs,
+  /* h */h,
+  /* app_ext */app_ext,
+  /* app */app
 ];
 
 function log_effect(str) {
@@ -82,13 +116,8 @@ var SubTest = /* module */[
   /* every */every
 ];
 
-function h(prim, prim$1, prim$2) {
-  return Hyperapp_hacked.h(prim, prim$1, prim$2);
-}
-
-function app(prim) {
-  Hyperapp_hacked.app(prim);
-  return /* () */0;
+function init(param) {
+  return 0;
 }
 
 function subscriptions(state) {
@@ -250,26 +279,20 @@ function view(state) {
             ]);
 }
 
-var prim = {
-  init: 0,
-  update: update,
-  view: view,
-  subscriptions: subscriptions,
-  node: document.getElementById("app")
-};
+app(/* record */[
+      /* init */init,
+      /* update */update,
+      /* view */view,
+      /* subscriptions */subscriptions,
+      /* node */document.getElementById("app")
+    ]);
 
-Hyperapp_hacked.app(prim);
-
-var init = 0;
-
-exports.Cmd = Cmd;
+exports.App = App;
 exports.EffectTest = EffectTest;
 exports.SubTest = SubTest;
-exports.h = h;
-exports.app = app;
 exports.init = init;
 exports.subscriptions = subscriptions;
 exports.update = update;
 exports.hh = hh;
 exports.view = view;
-/* prim Not a pure module */
+/*  Not a pure module */

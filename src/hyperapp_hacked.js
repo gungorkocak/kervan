@@ -455,7 +455,7 @@ export var app = function(props, enhance) {
     if (state !== newState) {
       state = newState
       if (subscriptions) {
-        var newSubs = subscriptions(state).map(s => s)
+        var newSubs = subscriptions(state).map(s => s[1])
         subs = patchSubs(subs, batch([newSubs]), dispatch)
         // subs = patchSubs(subs, batch([subscriptions(state)]), dispatch)
       }
@@ -466,12 +466,12 @@ export var app = function(props, enhance) {
 
   var dispatch = function(action, props, shouldPassUpdate) {
     if (shouldPassUpdate) {
-      setState(action)
+      setState(action())
       return
     }
     else {
       const [nextState, fx] = update(state, action)
-      fx && fx[0] && fx[0](fx[1], dispatch)
+      fx && fx[1] && fx[1][0](fx[1][1], dispatch)
       setState(nextState)
       return
     }
@@ -511,6 +511,6 @@ export var app = function(props, enhance) {
     )
   }
 
-  dispatch(props.init, true)
-  dispatch(props.init)
+  dispatch(props.init, null, true)
+  // dispatch(props.init)
 }
