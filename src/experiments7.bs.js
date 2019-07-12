@@ -25,11 +25,58 @@ var Fx = /* module */[
   /* run */run
 ];
 
+function one$1(fn) {
+  return /* SubOne */[fn];
+}
+
+function patch(_old_subs, _subs, dispatch, _next_subs) {
+  while(true) {
+    var next_subs = _next_subs;
+    var subs = _subs;
+    var old_subs = _old_subs;
+    if (old_subs) {
+      var old_subs$1 = old_subs[1];
+      if (subs) {
+        _next_subs = /* :: */[
+          subs[0],
+          next_subs
+        ];
+        _subs = subs[1];
+        _old_subs = old_subs$1;
+        continue ;
+      } else {
+        _next_subs = /* :: */[
+          old_subs[0],
+          next_subs
+        ];
+        _old_subs = old_subs$1;
+        continue ;
+      }
+    } else if (subs) {
+      _next_subs = /* :: */[
+        subs[0],
+        next_subs
+      ];
+      _subs = subs[1];
+      _old_subs = /* [] */0;
+      continue ;
+    } else {
+      return next_subs;
+    }
+  };
+}
+
+var Sub = /* module */[
+  /* none : SubNone */0,
+  /* one */one$1,
+  /* patch */patch
+];
+
 function h(prim, prim$1, prim$2) {
   return Superfine1.h(prim, prim$1, prim$2);
 }
 
-function patch(prim, prim$1, prim$2) {
+function patch$1(prim, prim$1, prim$2) {
   Superfine1.patch(prim, prim$1, prim$2);
   return /* () */0;
 }
@@ -39,10 +86,12 @@ function hh(tag, props, children) {
 }
 
 function app(param) {
-  var node = param[/* node */3];
+  var node = param[/* node */4];
+  var subscriptions = param[/* subscriptions */3];
   var view = param[/* view */2];
   var update = param[/* update */1];
   var state = /* record */[/* contents */Curry._1(param[/* init */0], /* () */0)];
+  var subs = /* record */[/* contents : [] */0];
   var dispatch_fn = /* record */[/* contents */(function (msg, param) {
         return /* () */0;
       })];
@@ -50,7 +99,7 @@ function app(param) {
     return Curry._1(dispatch_fn[0], msg);
   };
   var render = function (state, dispatch) {
-    patch(node, Curry._1(view, state), dispatch);
+    patch$1(node, Curry._1(view, state), dispatch);
     return /* () */0;
   };
   dispatch_fn[0] = (function (msg, param) {
@@ -58,15 +107,17 @@ function app(param) {
       run(match[1], dispatch);
       var next_state = match[0];
       state[0] = next_state;
+      subs[0] = patch(subs[0], Curry._1(subscriptions, state[0]), dispatch, /* [] */0);
+      console.log("haaaa", subs[0]);
       return render(state[0], dispatch);
     });
-  patch(node, Curry._1(view, state[0]), dispatch);
+  patch$1(node, Curry._1(view, state[0]), dispatch);
   return render(state[0], dispatch);
 }
 
 var App = /* module */[
   /* h */h,
-  /* patch */patch,
+  /* patch */patch$1,
   /* hh */hh,
   /* app */app
 ];
@@ -88,8 +139,32 @@ var EffectTest = /* module */[
   /* delay */delay
 ];
 
+function every(ms, msg, dispatch) {
+  var id = setInterval((function (param) {
+          return Curry._2(dispatch, msg, /* () */0);
+        }), ms);
+  return (function (param) {
+      clearInterval(id);
+      return /* () */0;
+    });
+}
+
+var SubTest = /* module */[/* every */every];
+
 function init(param) {
   return 0;
+}
+
+function subscriptions(state) {
+  return /* :: */[
+          /* SubNone */0,
+          /* :: */[
+            /* SubOne */[(function (param) {
+                  return every(3000, /* Increment */0, param);
+                })],
+            /* [] */0
+          ]
+        ];
 }
 
 function update(state, param) {
@@ -203,13 +278,17 @@ app(/* record */[
       /* init */init,
       /* update */update,
       /* view */view,
+      /* subscriptions */subscriptions,
       /* node */document.getElementById("app")
     ]);
 
 exports.Fx = Fx;
+exports.Sub = Sub;
 exports.App = App;
 exports.EffectTest = EffectTest;
+exports.SubTest = SubTest;
 exports.init = init;
+exports.subscriptions = subscriptions;
 exports.update = update;
 exports.view = view;
 /*  Not a pure module */

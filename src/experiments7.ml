@@ -16,6 +16,36 @@ struct
 end
 
 
+module Sub =
+struct
+  type 'msg sub_fn = ('msg -> unit -> unit) -> (unit -> unit)
+
+  type 'msg sub =
+    | SubNone
+    | SubOne of 'msg sub_fn
+
+  type ('state, 'msg) t = 'state -> 'msg sub list
+
+  let none = SubNone
+  let one fn = SubOne fn
+
+  let rec patch old_subs subs dispatch next_subs = match old_subs, subs with
+    | [], [] ->
+      next_subs
+
+    | [], sub :: subs ->
+      patch [] subs dispatch (sub :: next_subs)
+
+    | old_sub :: old_subs, [] ->
+      patch  old_subs subs dispatch (old_sub :: next_subs)
+
+    | old_sub :: old_subs, sub :: subs ->
+      patch old_subs subs dispatch (sub :: next_subs)
+
+
+end
+
+
 module App =
 struct
   type tagname = string
@@ -40,13 +70,15 @@ struct
     { init: unit -> 'state
     ; update: 'state -> 'msg -> 'state * ('msg Fx.t)
     ; view: 'state -> vdom
+    ; subscriptions: ('state, 'msg) Sub.t
     ; node: 'node
     }
 
   type 'msg dispatch = 'msg -> unit
 
-  let app { init ; update ; view ; node } =
+  let app { init ; update ; view ; subscriptions; node } =
     let state = ref (init ()) in
+    let subs = ref [] in
     let dispatch_fn = ref (fun msg () -> ()) in
     let dispatch msg = !dispatch_fn msg in
 
@@ -57,6 +89,8 @@ struct
 
     let set_state next_state =
       let () = state := next_state in
+      let () = subs := Sub.patch !subs (subscriptions !state) dispatch [] in
+      let () = Js.log2 "haaaa" !subs in
       render !state dispatch
     in
 
@@ -95,6 +129,15 @@ struct
     )
 end
 
+module SubTest =
+struct
+  let every ms msg =
+    (fun dispatch ->
+       let id = Js.Global.setInterval (fun () -> dispatch msg ()) ms in
+       (fun () -> Js.Global.clearInterval id)
+    )
+end
+
 type state = int
 
 type msg =
@@ -105,6 +148,12 @@ type msg =
 
 
 let init () = 0
+
+
+let subscriptions state =
+  [ Sub.none
+  ; Sub.one (SubTest.every 3000 Increment)
+  ]
 
 
 let update state = function
@@ -141,4 +190,10 @@ let view state =
     ]
 
 let () =
-  app { init=init ; view=view ; update=update ; node=(get_by_id dom "app") }
+  app
+    { init=init
+    ; view=view
+    ; update=update
+    ; subscriptions=subscriptions
+    ; node=(get_by_id dom "app")
+    }
