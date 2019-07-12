@@ -6,6 +6,27 @@ var Block = require("bs-platform/lib/js/block.js");
 var Curry = require("bs-platform/lib/js/curry.js");
 var Superfine1 = require("./superfine1");
 
+function one(param) {
+  return /* FxOne */[
+          param[0],
+          param[1]
+        ];
+}
+
+function run(fx, dispatch) {
+  if (fx) {
+    return Curry._2(fx[0], fx[1], dispatch);
+  } else {
+    return /* () */0;
+  }
+}
+
+var Fx = /* module */[
+  /* none : FxNone */0,
+  /* one */one,
+  /* run */run
+];
+
 function h(prim, prim$1, prim$2) {
   return Superfine1.h(prim, prim$1, prim$2);
 }
@@ -35,7 +56,9 @@ function app(param) {
     return /* () */0;
   };
   dispatch_fn[0] = (function (msg, param) {
-      var next_state = Curry._2(update, state[0], msg);
+      var match = Curry._2(update, state[0], msg);
+      run(match[1], dispatch[0]);
+      var next_state = match[0];
       state[0] = next_state;
       return render(state[0], dispatch[0]);
     });
@@ -50,15 +73,41 @@ var App = /* module */[
   /* app */app
 ];
 
+function log_effect(str, param) {
+  console.log(str);
+  return /* () */0;
+}
+
+function log(str) {
+  return /* tuple */[
+          log_effect,
+          str
+        ];
+}
+
+var EffectTest = /* module */[
+  /* log_effect */log_effect,
+  /* log */log
+];
+
 function init(param) {
   return 0;
 }
 
 function update(state, param) {
   if (param) {
-    return state - 1 | 0;
+    return /* tuple */[
+            state - 1 | 0,
+            one(/* tuple */[
+                  log_effect,
+                  state
+                ])
+          ];
   } else {
-    return state + 1 | 0;
+    return /* tuple */[
+            state + 1 | 0,
+            /* FxNone */0
+          ];
   }
 }
 
@@ -89,7 +138,7 @@ function view(state) {
                       /* :: */[
                         /* Handler */Block.__(1, [/* tuple */[
                               "onclick",
-                              state > 10 ? /* Decrement */1 : /* Increment */0
+                              /* Increment */0
                             ]]),
                         /* [] */0
                       ]
@@ -97,7 +146,25 @@ function view(state) {
                       /* Text */["+"],
                       /* [] */0
                     ]),
-                /* [] */0
+                /* :: */[
+                  hh("button", /* :: */[
+                        /* Attr */Block.__(0, [/* tuple */[
+                              "id",
+                              "btn-dec"
+                            ]]),
+                        /* :: */[
+                          /* Handler */Block.__(1, [/* tuple */[
+                                "onclick",
+                                /* Decrement */1
+                              ]]),
+                          /* [] */0
+                        ]
+                      ], /* :: */[
+                        /* Text */["-"],
+                        /* [] */0
+                      ]),
+                  /* [] */0
+                ]
               ]
             ]);
 }
@@ -109,7 +176,9 @@ app(/* record */[
       /* node */document.getElementById("app")
     ]);
 
+exports.Fx = Fx;
 exports.App = App;
+exports.EffectTest = EffectTest;
 exports.init = init;
 exports.update = update;
 exports.view = view;

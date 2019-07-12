@@ -1,4 +1,21 @@
 
+module Fx =
+struct
+  type ('props, 'dispatch) fx_fn = 'props -> 'dispatch -> unit
+
+  type ('props, 'dispatch) t =
+    | FxNone
+    | FxOne of (('props, 'dispatch) fx_fn) * 'props
+
+  let none = FxNone
+  let one (fn, props) = FxOne (fn, props)
+
+  let run fx dispatch = match fx with
+    | FxNone -> ()
+    | FxOne (fn, props) -> fn props dispatch
+end
+
+
 module App =
 struct
   type tagname = string
@@ -19,9 +36,9 @@ struct
   let hh tag props children =
     h tag (Array.of_list props) (Array.of_list children)
 
-  type ('state, 'msg, 'node) app =
+  type ('state, 'msg, 'fx_props, 'dispatch, 'node) app =
     { init: unit -> 'state
-    ; update: 'state -> 'msg -> 'state
+    ; update: 'state -> 'msg -> 'state * (('fx_props, 'dispatch) Fx.t)
     ; view: 'state -> vdom
     ; node: 'node
     }
@@ -41,11 +58,16 @@ struct
       render !state !dispatch
     in
 
-    let () = dispatch_fn := (fun msg () -> set_state (update !state msg)) in
+    let () = dispatch_fn := (
+      fun msg () ->
+        let next_state, fx = update !state msg in
+        let () = Fx.run fx !dispatch in
+        set_state next_state
+    )
+    in
     let () = patch node (view !state) !dispatch in
 
     render !state !dispatch
-
 end
 
 (* Example App *)
@@ -58,6 +80,13 @@ type id
 external dom : dom = "document" [@@bs.val]
 external get_by_id : dom -> string -> id = "getElementById" [@@bs.send]
 
+module EffectTest =
+struct
+  let log_effect str _ = Js.log str
+
+  let log str = log_effect, str
+end
+
 type state = int
 
 type msg =
@@ -69,8 +98,8 @@ let init () = 0
 
 
 let update state = function
-  | Increment -> state + 1
-  | Decrement -> state - 1
+  | Increment -> state + 1, Fx.none
+  | Decrement -> state - 1, Fx.one (EffectTest.log state)
 
 
 let view state =
@@ -83,9 +112,14 @@ let view state =
         [ Text(string_of_int state) ]
     ; hh "button"
         [ Attr("id", "btn-inc")
-        ; Handler("onclick", if state > 10 then Decrement else Increment)
+        ; Handler("onclick", Increment)
         ]
         [ Text("+") ]
+    ; hh "button"
+        [ Attr("id", "btn-dec")
+        ; Handler("onclick", Decrement)
+        ]
+        [ Text("-") ]
     ]
 
 let () =
