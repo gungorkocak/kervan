@@ -28,16 +28,23 @@ struct
 
   let app { init ; update ; view ; node } =
     let state = ref (init ()) in
-    let rec set_state next_state =
-      let () = state := next_state in
-      let dispatch msg =
-        let dispatch_fn () = set_state (update !state msg) in
-        dispatch_fn
-      in
-      let () = patch node (view !state) dispatch in
+    let dispatch_fn = ref (fun msg () -> ()) in
+    let dispatch = ref (fun msg -> !dispatch_fn msg) in
+
+    let render state dispatch =
+      let () = patch node (view state) dispatch in
       ()
     in
-    set_state !state
+
+    let set_state next_state =
+      let () = state := next_state in
+      render !state !dispatch
+    in
+
+    let () = dispatch_fn := (fun msg () -> set_state (update !state msg)) in
+    let () = patch node (view !state) !dispatch in
+
+    render !state !dispatch
 
 end
 
@@ -55,6 +62,7 @@ type state = int
 
 type msg =
   | Increment
+  | Decrement
 
 
 let init () = 0
@@ -62,6 +70,7 @@ let init () = 0
 
 let update state = function
   | Increment -> state + 1
+  | Decrement -> state - 1
 
 
 let view state =
@@ -74,7 +83,7 @@ let view state =
         [ Text(string_of_int state) ]
     ; hh "button"
         [ Attr("id", "btn-inc")
-        ; Handler("onclick", Increment)
+        ; Handler("onclick", if state > 10 then Decrement else Increment)
         ]
         [ Text("+") ]
     ]

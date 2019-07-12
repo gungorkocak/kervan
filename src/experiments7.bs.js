@@ -24,17 +24,23 @@ function app(param) {
   var view = param[/* view */2];
   var update = param[/* update */1];
   var state = /* record */[/* contents */Curry._1(param[/* init */0], /* () */0)];
-  var set_state = function (next_state) {
-    state[0] = next_state;
-    var dispatch = function (msg) {
-      return (function (param) {
-          return set_state(Curry._2(update, state[0], msg));
-        });
-    };
-    patch(node, Curry._1(view, state[0]), dispatch);
+  var dispatch_fn = /* record */[/* contents */(function (msg, param) {
+        return /* () */0;
+      })];
+  var dispatch = /* record */[/* contents */(function (msg) {
+        return Curry._1(dispatch_fn[0], msg);
+      })];
+  var render = function (state, dispatch) {
+    patch(node, Curry._1(view, state), dispatch);
     return /* () */0;
   };
-  return set_state(state[0]);
+  dispatch_fn[0] = (function (msg, param) {
+      var next_state = Curry._2(update, state[0], msg);
+      state[0] = next_state;
+      return render(state[0], dispatch[0]);
+    });
+  patch(node, Curry._1(view, state[0]), dispatch[0]);
+  return render(state[0], dispatch[0]);
 }
 
 var App = /* module */[
@@ -49,7 +55,11 @@ function init(param) {
 }
 
 function update(state, param) {
-  return state + 1 | 0;
+  if (param) {
+    return state - 1 | 0;
+  } else {
+    return state + 1 | 0;
+  }
 }
 
 function view(state) {
@@ -79,7 +89,7 @@ function view(state) {
                       /* :: */[
                         /* Handler */Block.__(1, [/* tuple */[
                               "onclick",
-                              /* Increment */0
+                              state > 10 ? /* Decrement */1 : /* Increment */0
                             ]]),
                         /* [] */0
                       ]
