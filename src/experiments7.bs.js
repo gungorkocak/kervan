@@ -4,18 +4,16 @@
 var $$Array = require("bs-platform/lib/js/array.js");
 var Block = require("bs-platform/lib/js/block.js");
 var Curry = require("bs-platform/lib/js/curry.js");
+var Caml_int32 = require("bs-platform/lib/js/caml_int32.js");
 var Superfine1 = require("./superfine1");
 
-function one(param) {
-  return /* FxOne */[
-          param[0],
-          param[1]
-        ];
+function one(fn) {
+  return /* FxOne */[fn];
 }
 
 function run(fx, dispatch) {
   if (fx) {
-    return Curry._2(fx[0], fx[1], dispatch);
+    return Curry._1(fx[0], dispatch);
   } else {
     return /* () */0;
   }
@@ -48,22 +46,22 @@ function app(param) {
   var dispatch_fn = /* record */[/* contents */(function (msg, param) {
         return /* () */0;
       })];
-  var dispatch = /* record */[/* contents */(function (msg) {
-        return Curry._1(dispatch_fn[0], msg);
-      })];
+  var dispatch = function (msg) {
+    return Curry._1(dispatch_fn[0], msg);
+  };
   var render = function (state, dispatch) {
     patch(node, Curry._1(view, state), dispatch);
     return /* () */0;
   };
   dispatch_fn[0] = (function (msg, param) {
       var match = Curry._2(update, state[0], msg);
-      run(match[1], dispatch[0]);
+      run(match[1], dispatch);
       var next_state = match[0];
       state[0] = next_state;
-      return render(state[0], dispatch[0]);
+      return render(state[0], dispatch);
     });
-  patch(node, Curry._1(view, state[0]), dispatch[0]);
-  return render(state[0], dispatch[0]);
+  patch(node, Curry._1(view, state[0]), dispatch);
+  return render(state[0], dispatch);
 }
 
 var App = /* module */[
@@ -73,21 +71,21 @@ var App = /* module */[
   /* app */app
 ];
 
-function log_effect(str, param) {
+function log(str, param) {
   console.log(str);
   return /* () */0;
 }
 
-function log(str) {
-  return /* tuple */[
-          log_effect,
-          str
-        ];
+function delay(ms, msg, dispatch) {
+  setTimeout((function (param) {
+          return Curry._2(dispatch, msg, /* () */0);
+        }), ms);
+  return /* () */0;
 }
 
 var EffectTest = /* module */[
-  /* log_effect */log_effect,
-  /* log */log
+  /* log */log,
+  /* delay */delay
 ];
 
 function init(param) {
@@ -95,19 +93,33 @@ function init(param) {
 }
 
 function update(state, param) {
-  if (param) {
-    return /* tuple */[
-            state - 1 | 0,
-            one(/* tuple */[
-                  log_effect,
-                  state
-                ])
-          ];
-  } else {
-    return /* tuple */[
-            state + 1 | 0,
-            /* FxNone */0
-          ];
+  switch (param) {
+    case 0 : 
+        return /* tuple */[
+                state + 1 | 0,
+                /* FxNone */0
+              ];
+    case 1 : 
+        return /* tuple */[
+                state - 1 | 0,
+                /* FxOne */[(function (param) {
+                      console.log(state);
+                      return /* () */0;
+                    })]
+              ];
+    case 2 : 
+        return /* tuple */[
+                Caml_int32.imul(state, state),
+                /* FxNone */0
+              ];
+    case 3 : 
+        return /* tuple */[
+                state + 1 | 0,
+                /* FxOne */[(function (param) {
+                      return delay(1000, /* Power */2, param);
+                    })]
+              ];
+    
   }
 }
 
@@ -138,32 +150,50 @@ function view(state) {
                       /* :: */[
                         /* Handler */Block.__(1, [/* tuple */[
                               "onclick",
-                              /* Increment */0
+                              /* Boost */3
                             ]]),
                         /* [] */0
                       ]
                     ], /* :: */[
-                      /* Text */["+"],
+                      /* Text */["++"],
                       /* [] */0
                     ]),
                 /* :: */[
                   hh("button", /* :: */[
                         /* Attr */Block.__(0, [/* tuple */[
                               "id",
-                              "btn-dec"
+                              "btn-inc"
                             ]]),
                         /* :: */[
                           /* Handler */Block.__(1, [/* tuple */[
                                 "onclick",
-                                /* Decrement */1
+                                /* Increment */0
                               ]]),
                           /* [] */0
                         ]
                       ], /* :: */[
-                        /* Text */["-"],
+                        /* Text */["+"],
                         /* [] */0
                       ]),
-                  /* [] */0
+                  /* :: */[
+                    hh("button", /* :: */[
+                          /* Attr */Block.__(0, [/* tuple */[
+                                "id",
+                                "btn-dec"
+                              ]]),
+                          /* :: */[
+                            /* Handler */Block.__(1, [/* tuple */[
+                                  "onclick",
+                                  /* Decrement */1
+                                ]]),
+                            /* [] */0
+                          ]
+                        ], /* :: */[
+                          /* Text */["-"],
+                          /* [] */0
+                        ]),
+                    /* [] */0
+                  ]
                 ]
               ]
             ]);

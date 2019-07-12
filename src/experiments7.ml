@@ -1,18 +1,18 @@
 
 module Fx =
 struct
-  type ('props, 'dispatch) fx_fn = 'props -> 'dispatch -> unit
+  type 'msg fx_fn = ('msg -> unit -> unit) -> unit
 
-  type ('props, 'dispatch) t =
+  type 'msg t =
     | FxNone
-    | FxOne of (('props, 'dispatch) fx_fn) * 'props
+    | FxOne of 'msg fx_fn
 
   let none = FxNone
-  let one (fn, props) = FxOne (fn, props)
+  let one fn = FxOne fn
 
   let run fx dispatch = match fx with
     | FxNone -> ()
-    | FxOne (fn, props) -> fn props dispatch
+    | FxOne fn -> fn dispatch
 end
 
 
@@ -30,23 +30,25 @@ struct
 
 
   external h : tagname -> 'msg prop array -> vdom array -> vdom   = "h" [@@bs.module "./superfine1"]
-  external patch : 'node -> vdom -> ('msg -> (unit -> unit)) -> unit = "patch" [@@bs.module "./superfine1"]
+  external patch : 'node -> vdom -> ('msg -> unit -> unit) -> unit = "patch" [@@bs.module "./superfine1"]
 
 
   let hh tag props children =
     h tag (Array.of_list props) (Array.of_list children)
 
-  type ('state, 'msg, 'fx_props, 'dispatch, 'node) app =
+  type ('state, 'msg, 'node) app =
     { init: unit -> 'state
-    ; update: 'state -> 'msg -> 'state * (('fx_props, 'dispatch) Fx.t)
+    ; update: 'state -> 'msg -> 'state * ('msg Fx.t)
     ; view: 'state -> vdom
     ; node: 'node
     }
 
+  type 'msg dispatch = 'msg -> unit
+
   let app { init ; update ; view ; node } =
     let state = ref (init ()) in
     let dispatch_fn = ref (fun msg () -> ()) in
-    let dispatch = ref (fun msg -> !dispatch_fn msg) in
+    let dispatch msg = !dispatch_fn msg in
 
     let render state dispatch =
       let () = patch node (view state) dispatch in
@@ -55,19 +57,19 @@ struct
 
     let set_state next_state =
       let () = state := next_state in
-      render !state !dispatch
+      render !state dispatch
     in
 
     let () = dispatch_fn := (
       fun msg () ->
         let next_state, fx = update !state msg in
-        let () = Fx.run fx !dispatch in
+        let () = Fx.run fx dispatch in
         set_state next_state
     )
     in
-    let () = patch node (view !state) !dispatch in
+    let () = patch node (view !state) dispatch in
 
-    render !state !dispatch
+    render !state dispatch
 end
 
 (* Example App *)
@@ -82,9 +84,15 @@ external get_by_id : dom -> string -> id = "getElementById" [@@bs.send]
 
 module EffectTest =
 struct
-  let log_effect str _ = Js.log str
+  let log str =
+    (fun _ -> Js.log str)
 
-  let log str = log_effect, str
+
+  let delay ms msg =
+    (fun dispatch ->
+       let _ = Js.Global.setTimeout (fun () -> dispatch msg ()) ms in
+       ()
+    )
 end
 
 type state = int
@@ -92,6 +100,8 @@ type state = int
 type msg =
   | Increment
   | Decrement
+  | Power
+  | Boost
 
 
 let init () = 0
@@ -100,6 +110,9 @@ let init () = 0
 let update state = function
   | Increment -> state + 1, Fx.none
   | Decrement -> state - 1, Fx.one (EffectTest.log state)
+  | Power -> state * state, Fx.none
+  | Boost -> state + 1, Fx.one (EffectTest.delay 1000 Power)
+
 
 
 let view state =
@@ -110,6 +123,11 @@ let view state =
           Attr("id", "naber")
         ]
         [ Text(string_of_int state) ]
+    ; hh "button"
+        [ Attr("id", "btn-inc")
+        ; Handler("onclick", Boost)
+        ]
+        [ Text("++") ]
     ; hh "button"
         [ Attr("id", "btn-inc")
         ; Handler("onclick", Increment)
