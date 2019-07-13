@@ -1,7 +1,7 @@
 
 module Fx =
 struct
-  type 'msg fx_fn = ('msg -> unit -> unit) -> unit
+  type 'msg fx_fn = ('msg -> unit) -> unit
 
   type 'msg t =
     | FxNone
@@ -18,30 +18,56 @@ end
 
 module Sub =
 struct
-  type 'msg sub_fn = ('msg -> unit -> unit) -> (unit -> unit)
+  type sub_stop_fn = unit -> unit
+  type 'msg sub_start_fn = ('msg -> unit) -> sub_stop_fn
 
   type 'msg sub =
     | SubNone
-    | SubOne of 'msg sub_fn
+    | SubStart of string * 'msg sub_start_fn
+    | SubStop of string * sub_stop_fn
 
   type ('state, 'msg) t = 'state -> 'msg sub list
 
   let none = SubNone
-  let one fn = SubOne fn
+  let start key start_fn = SubStart (key, start_fn)
 
-  let rec patch old_subs subs dispatch next_subs = match old_subs, subs with
+
+  let call dispatch old_sub sub = match old_sub, sub with
+    | SubNone, SubNone ->
+      SubNone
+
+    | SubStop (key, stop_fn), SubStop _ ->
+      SubStop (key, stop_fn)
+
+    | SubNone, SubStart (key, start_fn) ->
+      SubStop (key, start_fn dispatch)
+
+    | SubStop (_, stop_fn), SubNone ->
+      let () = stop_fn () in
+      SubNone
+
+    | SubStop (old_key, stop_fn), SubStart (key, _) when old_key = key ->
+      SubStop (old_key, stop_fn)
+
+    | SubStop (old_key, stop_fn), SubStart (key, start_fn) ->
+      let () = stop_fn () in
+      SubStop (key, start_fn dispatch)
+
+  let rec patch old_subs subs next_subs dispatch = match old_subs, subs with
     | [], [] ->
-      next_subs
+      List.rev next_subs
 
     | [], sub :: subs ->
-      patch [] subs dispatch (sub :: next_subs)
+      let next_sub = call dispatch SubNone sub in
+      patch [] subs (next_sub :: next_subs) dispatch
 
     | old_sub :: old_subs, [] ->
-      patch  old_subs subs dispatch (old_sub :: next_subs)
+      let _ = call dispatch old_sub SubNone in
+      patch  old_subs subs next_subs dispatch
 
     | old_sub :: old_subs, sub :: subs ->
-      patch old_subs subs dispatch (sub :: next_subs)
-
+      let next_sub = call dispatch old_sub sub in
+      patch old_subs subs (next_sub :: next_subs) dispatch
 
 end
 
@@ -77,33 +103,39 @@ struct
   type 'msg dispatch = 'msg -> unit
 
   let app { init ; update ; view ; subscriptions; node } =
+    (* figure out how to prevent double init () on state ref *)
     let state = ref (init ()) in
     let subs = ref [] in
-    let dispatch_fn = ref (fun msg () -> ()) in
+    let dispatch_fn = ref (fun msg -> ()) in
+
+    (* TODO: add event argument to handler function *)
+    (* TODO: find a way to force named function for event handling *)
+    let event_handler_fn msg () = !dispatch_fn msg in
+    let event_handler msg = event_handler_fn msg in
+
     let dispatch msg = !dispatch_fn msg in
 
-    let render state dispatch =
-      let () = patch node (view state) dispatch in
+    let render state event_handler =
+      let () = patch node (view state) event_handler in
       ()
     in
 
     let set_state next_state =
       let () = state := next_state in
-      let () = subs := Sub.patch !subs (subscriptions !state) dispatch [] in
-      let () = Js.log2 "haaaa" !subs in
-      render !state dispatch
+      let () = subs := Sub.patch !subs (subscriptions !state) [] dispatch in
+      render !state event_handler
     in
 
     let () = dispatch_fn := (
-      fun msg () ->
+      fun msg ->
         let next_state, fx = update !state msg in
         let () = Fx.run fx dispatch in
         set_state next_state
     )
     in
-    let () = patch node (view !state) dispatch in
+    (* let () = patch node (view !state) dispatch in *)
 
-    render !state dispatch
+    set_state (init ())
 end
 
 (* Example App *)
@@ -124,18 +156,25 @@ struct
 
   let delay ms msg =
     (fun dispatch ->
-       let _ = Js.Global.setTimeout (fun () -> dispatch msg ()) ms in
+       let _ = Js.Global.setTimeout (fun () -> dispatch msg) ms in
        ()
     )
 end
 
 module SubTest =
 struct
-  let every ms msg =
-    (fun dispatch ->
-       let id = Js.Global.setInterval (fun () -> dispatch msg ()) ms in
-       (fun () -> Js.Global.clearInterval id)
-    )
+  let every ~key ms msg =
+    let every_effect =
+      (fun dispatch ->
+        let () = Js.log "every start..." in
+        let id = Js.Global.setInterval (fun () -> dispatch msg) ms in
+        (fun () ->
+           let () = Js.log "every stop..." in
+           Js.Global.clearInterval id
+        )
+      )
+    in
+    Sub.start key every_effect
 end
 
 type state = int
@@ -149,10 +188,11 @@ type msg =
 
 let init () = 0
 
+let sub_key count = if count >= 20 then "ahmet5" else "ahmet"
 
 let subscriptions state =
   [ Sub.none
-  ; Sub.one (SubTest.every 3000 Increment)
+  ; SubTest.every ~key:(sub_key state) 1000 Increment
   ]
 
 
