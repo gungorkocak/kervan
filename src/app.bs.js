@@ -130,6 +130,18 @@ function node(tag, props, children) {
   return Superfine1.h(tag, $$Array.of_list(props), $$Array.of_list(children));
 }
 
+function render(node, view, state, event_handler) {
+  patch$1(node, Curry._1(view, state), event_handler);
+  return /* () */0;
+}
+
+var View = /* module */[
+  /* h */h,
+  /* patch */patch$1,
+  /* node */node,
+  /* render */render
+];
+
 function app(param) {
   var node = param[/* node */4];
   var subscriptions = param[/* subscriptions */3];
@@ -152,10 +164,7 @@ function app(param) {
   var set_state = function (next_state) {
     state[0] = next_state;
     subs[0] = patch(subs[0], Curry._1(subscriptions, state[0]), /* [] */0, dispatch);
-    var state$1 = state[0];
-    var event_handler$1 = event_handler;
-    patch$1(node, Curry._1(view, state$1), event_handler$1);
-    return /* () */0;
+    return render(node, view, state[0], event_handler);
   };
   dispatch_fn[0] = (function (msg) {
       var match = Curry._2(update, state[0], msg);
@@ -167,8 +176,7 @@ function app(param) {
 
 exports.Fx = Fx;
 exports.Sub = Sub;
-exports.h = h;
-exports.patch = patch$1;
-exports.node = node;
+exports.View = View;
 exports.app = app;
+exports.node = node;
 /* ./superfine1 Not a pure module */

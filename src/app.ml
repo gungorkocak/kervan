@@ -74,32 +74,38 @@ struct
 
 end
 
+module View =
+struct
+  type tagname = string
 
-type tagname = string
+  type 'msg prop =
+    | Attr of (string * string)
+    | Handler of (string * 'msg)
 
-type 'msg prop =
-  | Attr of (string * string)
-  | Handler of (string * 'msg)
+  type vdom =
+    | VDom
+    | Text of string
 
-type vdom =
-  | VDom
-  | Text of string
+  external h : tagname -> 'msg prop array -> vdom array -> vdom   = "h" [@@bs.module "./superfine1"]
+  external patch : 'node -> vdom -> ('msg -> unit -> unit) -> unit = "patch" [@@bs.module "./superfine1"]
 
+  let node tag props children =
+    h tag (Array.of_list props) (Array.of_list children)
 
-external h : tagname -> 'msg prop array -> vdom array -> vdom   = "h" [@@bs.module "./superfine1"]
-external patch : 'node -> vdom -> ('msg -> unit -> unit) -> unit = "patch" [@@bs.module "./superfine1"]
+  let render node view state event_handler =
+    let () = patch node (view state) event_handler in
+    ()
+end
 
-
-let node tag props children =
-  h tag (Array.of_list props) (Array.of_list children)
 
 type ('state, 'msg, 'node) app =
   { init: unit -> 'state
   ; update: 'state -> 'msg -> 'state * ('msg Fx.t)
-  ; view: 'state -> vdom
+  ; view: 'state -> View.vdom
   ; subscriptions: ('state, 'msg) Sub.t
   ; node: 'node
   }
+
 
 type 'msg dispatch = 'msg -> unit
 
@@ -116,15 +122,10 @@ let app { init ; update ; view ; subscriptions; node } =
 
   let dispatch msg = !dispatch_fn msg in
 
-  let render state event_handler =
-    let () = patch node (view state) event_handler in
-    ()
-  in
-
   let set_state next_state =
     let () = state := next_state in
     let () = subs := Sub.patch !subs (subscriptions !state) [] dispatch in
-    render !state event_handler
+    View.render node view !state event_handler
   in
 
   let () = dispatch_fn := (
@@ -135,3 +136,5 @@ let app { init ; update ; view ; subscriptions; node } =
   )
   in
   set_state (init ())
+
+let node = View.node
