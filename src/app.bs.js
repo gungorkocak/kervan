@@ -5,7 +5,7 @@ var List = require("bs-platform/lib/js/list.js");
 var $$Array = require("bs-platform/lib/js/array.js");
 var Block = require("bs-platform/lib/js/block.js");
 var Curry = require("bs-platform/lib/js/curry.js");
-var Superfine1 = require("./superfine1");
+var Caml_option = require("bs-platform/lib/js/caml_option.js");
 
 function one(fn) {
   return /* FxOne */[fn];
@@ -117,17 +117,49 @@ var Sub = /* module */[
   /* patch */patch
 ];
 
-function h(prim, prim$1, prim$2) {
-  return Superfine1.h(prim, prim$1, prim$2);
+function recycle_node(node) {
+  var match = node.nodeType;
+  if (match !== 1) {
+    return /* VNode */Block.__(0, [/* record */[
+                /* key */"",
+                /* name */node.nodeName,
+                /* props : [] */0,
+                /* children */$$Array.to_list(node.childNodes.map(recycle_node)),
+                /* node */Caml_option.some(node)
+              ]]);
+  } else {
+    return /* Text */Block.__(1, [node.nodeValue]);
+  }
 }
 
-function patch$1(prim, prim$1, prim$2) {
-  Superfine1.patch(prim, prim$1, prim$2);
+function vdom_of_node(node) {
+  var match = node.vdom;
+  if (match !== undefined) {
+    return match;
+  } else {
+    return recycle_node(node);
+  }
+}
+
+function patch_node(parent, node, old_vnode, vnode, dispatch, isSvg) {
+  return node;
+}
+
+function patch$1(node, vdom, dispatch) {
+  var node$1 = patch_node(node.parentNode, node, vdom_of_node(node), vdom, dispatch, false);
+  node$1.vdom = vdom;
   return /* () */0;
 }
 
-function node(tag, props, children) {
-  return Superfine1.h(tag, $$Array.of_list(props), $$Array.of_list(children));
+function vnode(name, $staropt$star, props, children) {
+  var key = $staropt$star !== undefined ? $staropt$star : "";
+  return /* VNode */Block.__(0, [/* record */[
+              /* key */key,
+              /* name */name,
+              /* props */props,
+              /* children */children,
+              /* node */undefined
+            ]]);
 }
 
 function render(node, view, state, event_handler) {
@@ -136,9 +168,11 @@ function render(node, view, state, event_handler) {
 }
 
 var View = /* module */[
-  /* h */h,
+  /* recycle_node */recycle_node,
+  /* vdom_of_node */vdom_of_node,
+  /* patch_node */patch_node,
   /* patch */patch$1,
-  /* node */node,
+  /* vnode */vnode,
   /* render */render
 ];
 
@@ -178,5 +212,5 @@ exports.Fx = Fx;
 exports.Sub = Sub;
 exports.View = View;
 exports.app = app;
-exports.node = node;
-/* ./superfine1 Not a pure module */
+exports.vnode = vnode;
+/* No side effect */

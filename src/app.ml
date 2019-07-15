@@ -82,15 +82,84 @@ struct
     | Attr of (string * string)
     | Handler of (string * 'msg)
 
-  type vdom =
-    | VDom
+  type 'msg vnode =
+    | VNodeNone
+    | VNode of 'msg vnode_rec
     | Text of string
 
-  external h : tagname -> 'msg prop array -> vdom array -> vdom   = "h" [@@bs.module "./superfine1"]
-  external patch : 'node -> vdom -> ('msg -> unit -> unit) -> unit = "patch" [@@bs.module "./superfine1"]
+  and 'msg vnode_rec =
+    { key : string
+    ; name : string
+    ; props : 'msg prop list
+    ; children : 'msg vnode list
+    ; node : Dom.node option
+    }
 
-  let node tag props children =
-    h tag (Array.of_list props) (Array.of_list children)
+  external parent_node : Dom.node -> Dom.node = "parentNode" [@@bs.get]
+  external node_type : Dom.node -> int = "nodeType" [@@bs.get]
+  external node_value : Dom.node -> string = "nodeValue" [@@bs.get]
+  external node_name : Dom.node -> string = "nodeName" [@@bs.get]
+  external child_nodes : Dom.node -> Dom.node array = "childNodes" [@@bs.get]
+
+  external vdom : Dom.node -> 'msg vnode option = "vdom" [@@bs.get]
+  external set_vdom : Dom.node -> 'msg vnode -> unit = "vdom" [@@bs.set]
+
+
+
+  (* external h : tagname -> 'msg prop array -> vnode array -> vnode   = "h" [@@bs.module "./superfine1"] *)
+  (* external patch : 'node -> ('msg, 'vdom) vnode -> ('msg -> unit -> unit) -> unit = "patch" [@@bs.module "./superfine1"] *)
+
+  let rec recycle_node node = match node_type node with
+    | 1 (* TEXT_NODE *)     ->
+      Text (node_value node)
+
+    | _ (* RECYCLED_NODE *) ->
+      VNode
+        { name=(node_name node)
+        ; key=""
+        ; props=[]
+        ; children=(Array.to_list (Js.Array.map recycle_node (child_nodes node)))
+        ; node=(Some node)
+        }
+
+  let vdom_of_node node = match vdom node with
+    | None -> recycle_node node
+    | Some vdom -> vdom
+
+  let patch_node parent node old_vnode vnode dispatch isSvg = match old_vnode, vnode with
+    | VNodeNone, VNodeNone ->
+      node
+    | VNodeNone, Text str ->
+      (* create new text node *)
+      node
+    | VNodeNone, VNode new_rec ->
+      (* create new vnode *)
+      node
+    | Text old_str, VNodeNone ->
+      (* remove text node *)
+      node
+    | Text old_str, Text str ->
+      (* check string equality update node if necessary *)
+      node
+    | Text old_str, VNode new_rec ->
+      (* remove text node , create new vnode *)
+      node
+    | VNode old_rec, VNode new_rec ->
+      (* check vnode equality, update node if necessary *)
+      node
+    | VNode old_rec, VNodeNone ->
+      (* remove old vnode *)
+      node
+    | VNode old_rec, Text str ->
+      (* remove old vnode, create new text *)
+      node
+
+  let patch node vdom dispatch =
+    let node = patch_node (parent_node node) node (vdom_of_node node) vdom dispatch false in
+    set_vdom node vdom
+
+  let vnode name ?(key="") props children =
+    VNode { name=name ; key=key ; props=props ; children=children ; node=None }
 
   let render node view state event_handler =
     let () = patch node (view state) event_handler in
@@ -101,7 +170,7 @@ end
 type ('state, 'msg, 'node) app =
   { init: unit -> 'state
   ; update: 'state -> 'msg -> 'state * ('msg Fx.t)
-  ; view: 'state -> View.vdom
+  ; view: 'state -> 'msg View.vnode
   ; subscriptions: ('state, 'msg) Sub.t
   ; node: 'node
   }
@@ -137,4 +206,4 @@ let app { init ; update ; view ; subscriptions; node } =
   in
   set_state (init ())
 
-let node = View.node
+let vnode = View.vnode

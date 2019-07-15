@@ -22,19 +22,26 @@ var patchProperty = function(node, key, oldValue, newValue, dispatch, isSvg) {
   if (key === "key") {
   } else if (key[0] === "o" && key[1] === "n") {
     if (
+      // node call : custom
       !((node.handlers || (node.handlers = {}))[
         (key = key.slice(2).toLowerCase())
       ] = dispatch(newValue))
     ) {
+
+      // node call
       node.removeEventListener(key, listener)
     } else if (!oldValue) {
+      // node call
       node.addEventListener(key, listener)
     }
   } else if (!isSvg && key !== "list" && key in node) {
+    // node call
     node[key] = newValue == null ? "" : newValue
   } else if (newValue == null || newValue === false) {
+    // node call
     node.removeAttribute(key)
   } else {
+    // node call
     node.setAttribute(key, newValue)
   }
 }
@@ -42,6 +49,7 @@ var patchProperty = function(node, key, oldValue, newValue, dispatch, isSvg) {
 var createNode = function(vnode, dispatch, isSvg) {
   var node =
     vnode.type === TEXT_NODE
+      // node call
       ? document.createTextNode(vnode.name)
       : (isSvg = isSvg || vnode.name === "svg")
       ? document.createElementNS("http://www.w3.org/2000/svg", vnode.name)
@@ -53,9 +61,11 @@ var createNode = function(vnode, dispatch, isSvg) {
   }
 
   for (var i = 0, len = vnode.children.length; i < len; i++) {
+    // node call
     node.appendChild(createNode(vnode.children[i], dispatch, isSvg))
   }
 
+  // node call
   return (vnode.node = node)
 }
 
@@ -70,10 +80,13 @@ var patchNode = function(parent, node, oldVNode, newVNode, dispatch, isSvg) {
     oldVNode.type === TEXT_NODE &&
     newVNode.type === TEXT_NODE
   ) {
+    // node call
     if (oldVNode.name !== newVNode.name) node.nodeValue = newVNode.name
   } else if (oldVNode == null || oldVNode.name !== newVNode.name) {
+    // node call
     node = parent.insertBefore(createNode(newVNode, dispatch, isSvg), node)
     if (oldVNode != null) {
+      // node call
       parent.removeChild(oldVNode.node)
     }
   } else {
@@ -144,6 +157,7 @@ var patchNode = function(parent, node, oldVNode, newVNode, dispatch, isSvg) {
 
     if (oldHead > oldTail) {
       while (newHead <= newTail) {
+        // node call
         node.insertBefore(
           createNode(newVKids[newHead++], dispatch, isSvg),
           (oldVKid = oldVKids[oldHead]) && oldVKid.node
@@ -151,6 +165,7 @@ var patchNode = function(parent, node, oldVNode, newVNode, dispatch, isSvg) {
       }
     } else if (newHead > newTail) {
       while (oldHead <= oldTail) {
+        // node call
         node.removeChild(oldVKids[oldHead++].node)
       }
     } else {
@@ -169,6 +184,7 @@ var patchNode = function(parent, node, oldVNode, newVNode, dispatch, isSvg) {
           (newKey != null && newKey === getKey(oldVKids[oldHead + 1]))
         ) {
           if (oldKey == null) {
+            // node call
             node.removeChild(oldVKid.node)
           }
           oldHead++
@@ -197,6 +213,7 @@ var patchNode = function(parent, node, oldVNode, newVNode, dispatch, isSvg) {
             if ((tmpVKid = keyed[newKey]) != null) {
               patchNode(
                 node,
+                // node call
                 node.insertBefore(tmpVKid.node, oldVKid && oldVKid.node),
                 tmpVKid,
                 newVKids[newHead],
@@ -221,18 +238,21 @@ var patchNode = function(parent, node, oldVNode, newVNode, dispatch, isSvg) {
 
       while (oldHead <= oldTail) {
         if (getKey((oldVKid = oldVKids[oldHead++])) == null) {
+          // node call
           node.removeChild(oldVKid.node)
         }
       }
 
       for (var i in keyed) {
         if (newKeyed[i] == null) {
+          // node call
           node.removeChild(keyed[i].node)
         }
       }
     }
   }
 
+  // node call
   return (newVNode.node = node)
 }
 
@@ -253,10 +273,13 @@ var createTextVNode = function(value, node) {
 
 var recycleNode = function(node) {
   return node.nodeType === TEXT_NODE
+    // node call
     ? createTextVNode(node.nodeValue, node)
     : createVNode(
+        // node call
         node.nodeName.toLowerCase(),
         EMPTY_OBJ,
+        // node call
         map.call(node.childNodes, recycleNode),
         node,
         null,
@@ -265,16 +288,10 @@ var recycleNode = function(node) {
 }
 
 export var patch = function(node, vdom, dispatch) {
-  return (
-    ((node = patchNode(
-      node.parentNode,
-      node,
-      node.vdom || recycleNode(node),
-      vdom,
-      dispatch
-    )).vdom = vdom),
-    node
-  )
+  // node call
+  node = patchNode(node.parentNode, node, node.vdom || recycleNode(node), vdom, dispatch)
+  node.vdom = vdom
+  // return node
 }
 
 var unwrapBsProps = function (props) {

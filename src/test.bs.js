@@ -53,10 +53,7 @@ function sub_key(count) {
 function subscriptions(state) {
   return /* :: */[
           App$BgTestParcel.Sub[/* none */0],
-          /* :: */[
-            every(sub_key(state), 1000, /* Increment */0),
-            /* [] */0
-          ]
+          /* [] */0
         ];
 }
 
@@ -92,25 +89,25 @@ function update(state, param) {
 }
 
 function view(state) {
-  return App$BgTestParcel.node("div", /* :: */[
+  return App$BgTestParcel.vnode("div", undefined, /* :: */[
               /* Attr */Block.__(0, [/* tuple */[
                     "id",
                     "hello"
                   ]]),
               /* [] */0
             ], /* :: */[
-              App$BgTestParcel.node("div", /* :: */[
+              App$BgTestParcel.vnode("div", undefined, /* :: */[
                     /* Attr */Block.__(0, [/* tuple */[
                           "id",
                           "naber"
                         ]]),
                     /* [] */0
                   ], /* :: */[
-                    /* Text */[String(state)],
+                    /* Text */Block.__(1, [String(state)]),
                     /* [] */0
                   ]),
               /* :: */[
-                App$BgTestParcel.node("button", /* :: */[
+                App$BgTestParcel.vnode("button", undefined, /* :: */[
                       /* Attr */Block.__(0, [/* tuple */[
                             "id",
                             "btn-inc"
@@ -123,11 +120,11 @@ function view(state) {
                         /* [] */0
                       ]
                     ], /* :: */[
-                      /* Text */["++"],
+                      /* Text */Block.__(1, ["++"]),
                       /* [] */0
                     ]),
                 /* :: */[
-                  App$BgTestParcel.node("button", /* :: */[
+                  App$BgTestParcel.vnode("button", undefined, /* :: */[
                         /* Attr */Block.__(0, [/* tuple */[
                               "id",
                               "btn-inc"
@@ -140,11 +137,11 @@ function view(state) {
                           /* [] */0
                         ]
                       ], /* :: */[
-                        /* Text */["+"],
+                        /* Text */Block.__(1, ["+"]),
                         /* [] */0
                       ]),
                   /* :: */[
-                    App$BgTestParcel.node("button", /* :: */[
+                    App$BgTestParcel.vnode("button", undefined, /* :: */[
                           /* Attr */Block.__(0, [/* tuple */[
                                 "id",
                                 "btn-dec"
@@ -157,7 +154,7 @@ function view(state) {
                             /* [] */0
                           ]
                         ], /* :: */[
-                          /* Text */["-"],
+                          /* Text */Block.__(1, ["-"]),
                           /* [] */0
                         ]),
                     /* [] */0

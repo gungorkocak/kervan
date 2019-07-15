@@ -1,10 +1,7 @@
 open App
 
-type dom
-type id
-
-external dom : dom = "document" [@@bs.val]
-external get_by_id : dom -> string -> id = "getElementById" [@@bs.send]
+external dom : Dom.document = "document" [@@bs.val]
+external get_by_id : Dom.document -> string -> Dom.node = "getElementById" [@@bs.send]
 
 module EffectTest =
 struct
@@ -44,9 +41,9 @@ let init () = 0
 
 let sub_key count = if count >= 20 then "ahmet5" else "ahmet"
 
+(* ; SubTest.every ~key:(sub_key state) 1000 Increment *)
 let subscriptions state =
   [ Sub.none
-  ; SubTest.every ~key:(sub_key state) 1000 Increment
   ]
 
 
@@ -58,24 +55,24 @@ let update state = function
 
 
 let view state =
-  node "div"
+  vnode "div"
     [ Attr("id", "hello") ]
-    [ node "div"
+    [ vnode "div"
         [
           Attr("id", "naber")
         ]
         [ Text(string_of_int state) ]
-    ; node "button"
+    ; vnode "button"
         [ Attr("id", "btn-inc")
         ; Handler("onclick", Boost)
         ]
         [ Text("++") ]
-    ; node "button"
+    ; vnode "button"
         [ Attr("id", "btn-inc")
         ; Handler("onclick", Increment)
         ]
         [ Text("+") ]
-    ; node "button"
+    ; vnode "button"
         [ Attr("id", "btn-dec")
         ; Handler("onclick", Decrement)
         ]
