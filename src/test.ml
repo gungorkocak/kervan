@@ -1,111 +1,93 @@
-(* type state = int
- * 
- * type 'a msg = (state -> 'a option -> state) * 'a option
- * 
- * let increment (state: state) _ = state + 1
- * 
- * let decrement state _ = state - 1
- * 
- * type num_record =
- *   {
- *     num: int
- *   }
- * 
- * let set (state : state) (num : num_record option) = match num with
- *   | Some num -> num.num
- *   | None -> state
- * 
- * let x =
- *   (increment, None)
- * 
- * let y =
- *   (set, 42)
- * 
- * let update (f, props) state =
- *   f state props
- * 
- * let () =
- *   let state = update (set, Some { num=42 }) 10 in
- *   let next_state = update (increment, None) state in
- *   Js.log next_state
- * 
- * 
- * (\* below are hcaml *\)
- * 
- * type dom
- * type id
- * type action
- * type tagname = string
- * 
- * (\* type props =
- *  *   {
- *  *     id: string
- *  *   ; onclick: action [@bs.optional]
- *  *   }
- *  *   [@@bs.deriving abstract] *\)
- * 
- * type vdom =
- *   | VDom
- *   | Text of string
- * 
- * type program =
- *   {
- *     view : (state -> vdom)
- *   ; init : int
- *   ; node : id
- *   } [@@bs.deriving jsConverter]
- * 
- * type program_to_js = < init : int; node : id; view : state -> vdom > Js.t
- * 
- * type 'a attr_val =
- *   | String of string
- *   | Action of 'a msg
- * 
- * external dom : dom = "document" [@@bs.val]
- * external get_by_id : dom -> string -> id = "getElementById" [@@bs.send]
- * external h : tagname -> 'a attr_val Js.Dict.t -> vdom array -> vdom = "h" [@@bs.module "hyperapp"]
- * external app : program_to_js -> unit = "app" [@@bs.module "app"]
- * 
- * let hh tag props children =
- *     h tag (Js.Dict.fromList props) (Array.of_list children)
- * 
- * let init = 0
- * 
- * let view (state) =
- *   hh "div"
- *     [
- *       "id", "naber"
- *     ]
- *     [
- *       hh "div"
- *         [
- *           "id", "ahmet"
- *         ]
- *         [ Text(string_of_int state)]
- *     ; hh "button"
- *         [
- *           "id", "mehmet"
- *         ; "onclick", (increment, None)
- *         ]
- *         [ Text("+")]
- *     ; hh "button"
- *         [
- *           "id", "ayse"
- *         ; "onclick", (decrement, None)
- *         ]
- *         [ Text("-")]
- *     ; hh "button"
- *         [
- *           "id", "fatme"
- *         ; "onclick", (set, { num=42 })
- *         ]
- *         [ Text("Set to 42") ]
- *     ]
- * 
- * 
- * let main program =
- *   let props = programToJs program in
- *   app props
- * 
- * let () =
- *   main { init=init ; view=view ; node=(get_by_id dom "app") } *)
+open App
+
+type dom
+type id
+
+external dom : dom = "document" [@@bs.val]
+external get_by_id : dom -> string -> id = "getElementById" [@@bs.send]
+
+module EffectTest =
+struct
+  let log str =
+    (fun _ -> Js.log str)
+
+
+  let delay ms msg =
+    (fun dispatch ->
+       let _ = Js.Global.setTimeout (fun () -> dispatch msg) ms in
+       ()
+    )
+end
+
+module SubTest =
+struct
+  let every ~key ms msg =
+    let every_effect =
+      (fun dispatch ->
+        let id = Js.Global.setInterval (fun () -> dispatch msg) ms in
+        (fun () -> Js.Global.clearInterval id)
+      )
+    in
+    Sub.start key every_effect
+end
+
+type state = int
+
+type msg =
+  | Increment
+  | Decrement
+  | Power
+  | Boost
+
+
+let init () = 0
+
+let sub_key count = if count >= 20 then "ahmet5" else "ahmet"
+
+let subscriptions state =
+  [ Sub.none
+  ; SubTest.every ~key:(sub_key state) 1000 Increment
+  ]
+
+
+let update state = function
+  | Increment -> state + 1, Fx.none
+  | Decrement -> state - 1, Fx.one (EffectTest.log state)
+  | Power -> state * state, Fx.none
+  | Boost -> state + 1, Fx.one (EffectTest.delay 1000 Power)
+
+
+
+let view state =
+  hh "div"
+    [ Attr("id", "hello") ]
+    [ hh "div"
+        [
+          Attr("id", "naber")
+        ]
+        [ Text(string_of_int state) ]
+    ; hh "button"
+        [ Attr("id", "btn-inc")
+        ; Handler("onclick", Boost)
+        ]
+        [ Text("++") ]
+    ; hh "button"
+        [ Attr("id", "btn-inc")
+        ; Handler("onclick", Increment)
+        ]
+        [ Text("+") ]
+    ; hh "button"
+        [ Attr("id", "btn-dec")
+        ; Handler("onclick", Decrement)
+        ]
+        [ Text("-") ]
+    ]
+
+let () =
+  app
+    { init=init
+    ; view=view
+    ; update=update
+    ; subscriptions=subscriptions
+    ; node=(get_by_id dom "app")
+    }
