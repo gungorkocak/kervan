@@ -92,14 +92,14 @@ function update(state, param) {
 }
 
 function view(state) {
-  return App$BgTestParcel.hh("div", /* :: */[
+  return App$BgTestParcel.node("div", /* :: */[
               /* Attr */Block.__(0, [/* tuple */[
                     "id",
                     "hello"
                   ]]),
               /* [] */0
             ], /* :: */[
-              App$BgTestParcel.hh("div", /* :: */[
+              App$BgTestParcel.node("div", /* :: */[
                     /* Attr */Block.__(0, [/* tuple */[
                           "id",
                           "naber"
@@ -110,7 +110,7 @@ function view(state) {
                     /* [] */0
                   ]),
               /* :: */[
-                App$BgTestParcel.hh("button", /* :: */[
+                App$BgTestParcel.node("button", /* :: */[
                       /* Attr */Block.__(0, [/* tuple */[
                             "id",
                             "btn-inc"
@@ -127,7 +127,7 @@ function view(state) {
                       /* [] */0
                     ]),
                 /* :: */[
-                  App$BgTestParcel.hh("button", /* :: */[
+                  App$BgTestParcel.node("button", /* :: */[
                         /* Attr */Block.__(0, [/* tuple */[
                               "id",
                               "btn-inc"
@@ -144,7 +144,7 @@ function view(state) {
                         /* [] */0
                       ]),
                   /* :: */[
-                    App$BgTestParcel.hh("button", /* :: */[
+                    App$BgTestParcel.node("button", /* :: */[
                           /* Attr */Block.__(0, [/* tuple */[
                                 "id",
                                 "btn-dec"

@@ -57,26 +57,25 @@ let update state = function
   | Boost -> state + 1, Fx.one (EffectTest.delay 1000 Power)
 
 
-
 let view state =
-  hh "div"
+  node "div"
     [ Attr("id", "hello") ]
-    [ hh "div"
+    [ node "div"
         [
           Attr("id", "naber")
         ]
         [ Text(string_of_int state) ]
-    ; hh "button"
+    ; node "button"
         [ Attr("id", "btn-inc")
         ; Handler("onclick", Boost)
         ]
         [ Text("++") ]
-    ; hh "button"
+    ; node "button"
         [ Attr("id", "btn-inc")
         ; Handler("onclick", Increment)
         ]
         [ Text("+") ]
-    ; hh "button"
+    ; node "button"
         [ Attr("id", "btn-dec")
         ; Handler("onclick", Decrement)
         ]

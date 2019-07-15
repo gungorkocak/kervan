@@ -90,7 +90,7 @@ external h : tagname -> 'msg prop array -> vdom array -> vdom   = "h" [@@bs.modu
 external patch : 'node -> vdom -> ('msg -> unit -> unit) -> unit = "patch" [@@bs.module "./superfine1"]
 
 
-let hh tag props children =
+let node tag props children =
   h tag (Array.of_list props) (Array.of_list children)
 
 type ('state, 'msg, 'node) app =

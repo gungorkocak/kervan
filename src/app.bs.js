@@ -126,7 +126,7 @@ function patch$1(prim, prim$1, prim$2) {
   return /* () */0;
 }
 
-function hh(tag, props, children) {
+function node(tag, props, children) {
   return Superfine1.h(tag, $$Array.of_list(props), $$Array.of_list(children));
 }
 
@@ -169,6 +169,6 @@ exports.Fx = Fx;
 exports.Sub = Sub;
 exports.h = h;
 exports.patch = patch$1;
-exports.hh = hh;
+exports.node = node;
 exports.app = app;
 /* ./superfine1 Not a pure module */
