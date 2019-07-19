@@ -61,22 +61,22 @@ let view state =
         [
           Attr("id", "naber")
         ]
-        [ Text(string_of_int state) ]
+        [ text (string_of_int state) ]
     ; vnode "button"
         [ Attr("id", "btn-inc")
-        ; Handler("onclick", Boost)
+        ; Handler("click", Boost)
         ]
-        [ Text("++") ]
+        [ text "++" ]
     ; vnode "button"
         [ Attr("id", "btn-inc")
-        ; Handler("onclick", Increment)
+        ; Handler("click", Increment)
         ]
-        [ Text("+") ]
+        [ text "+" ]
     ; vnode "button"
         [ Attr("id", "btn-dec")
-        ; Handler("onclick", Decrement)
+        ; Handler("click", Decrement)
         ]
-        [ Text("-") ]
+        [ text "-" ]
     ]
 
 let () =

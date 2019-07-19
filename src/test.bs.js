@@ -89,72 +89,72 @@ function update(state, param) {
 }
 
 function view(state) {
-  return App$BgTestParcel.vnode("div", undefined, /* :: */[
+  return App$BgTestParcel.vnode(undefined, "div", /* :: */[
               /* Attr */Block.__(0, [/* tuple */[
                     "id",
                     "hello"
                   ]]),
               /* [] */0
             ], /* :: */[
-              App$BgTestParcel.vnode("div", undefined, /* :: */[
+              App$BgTestParcel.vnode(undefined, "div", /* :: */[
                     /* Attr */Block.__(0, [/* tuple */[
                           "id",
                           "naber"
                         ]]),
                     /* [] */0
                   ], /* :: */[
-                    /* Text */Block.__(1, [String(state)]),
+                    App$BgTestParcel.text(undefined, String(state)),
                     /* [] */0
                   ]),
               /* :: */[
-                App$BgTestParcel.vnode("button", undefined, /* :: */[
+                App$BgTestParcel.vnode(undefined, "button", /* :: */[
                       /* Attr */Block.__(0, [/* tuple */[
                             "id",
                             "btn-inc"
                           ]]),
                       /* :: */[
                         /* Handler */Block.__(1, [/* tuple */[
-                              "onclick",
+                              "click",
                               /* Boost */3
                             ]]),
                         /* [] */0
                       ]
                     ], /* :: */[
-                      /* Text */Block.__(1, ["++"]),
+                      App$BgTestParcel.text(undefined, "++"),
                       /* [] */0
                     ]),
                 /* :: */[
-                  App$BgTestParcel.vnode("button", undefined, /* :: */[
+                  App$BgTestParcel.vnode(undefined, "button", /* :: */[
                         /* Attr */Block.__(0, [/* tuple */[
                               "id",
                               "btn-inc"
                             ]]),
                         /* :: */[
                           /* Handler */Block.__(1, [/* tuple */[
-                                "onclick",
+                                "click",
                                 /* Increment */0
                               ]]),
                           /* [] */0
                         ]
                       ], /* :: */[
-                        /* Text */Block.__(1, ["+"]),
+                        App$BgTestParcel.text(undefined, "+"),
                         /* [] */0
                       ]),
                   /* :: */[
-                    App$BgTestParcel.vnode("button", undefined, /* :: */[
+                    App$BgTestParcel.vnode(undefined, "button", /* :: */[
                           /* Attr */Block.__(0, [/* tuple */[
                                 "id",
                                 "btn-dec"
                               ]]),
                           /* :: */[
                             /* Handler */Block.__(1, [/* tuple */[
-                                  "onclick",
+                                  "click",
                                   /* Decrement */1
                                 ]]),
                             /* [] */0
                           ]
                         ], /* :: */[
-                          /* Text */Block.__(1, ["-"]),
+                          App$BgTestParcel.text(undefined, "-"),
                           /* [] */0
                         ]),
                     /* [] */0
