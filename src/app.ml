@@ -108,27 +108,38 @@ struct
 
   external dom : Dom.document = "document" [@@bs.val]
 
-  external create_text_node : Dom.document -> string -> Dom.node option = "createTextNode" [@@bs.send]
-  external create_element : Dom.document -> string -> Dom.node option = "createElement" [@@bs.send]
+  external create_text_node : Dom.document -> string -> Dom.node = "createTextNode" [@@bs.send]
+  external create_element : Dom.document -> string -> Dom.node = "createElement" [@@bs.send]
 
-  external set_node_value : Dom.node option -> string -> unit = "nodeValue" [@@bs.set]
-  external set_attribute : Dom.node option -> string -> string -> unit = "setAttribute" [@@bs.send]
-  external remove_attribute : Dom.node option -> string -> unit = "removeAttribute" [@@bs.send]
+  external set_node_value   : string -> Dom.node -> Dom.node = "setNodeValue" [@@bs.module "./js_utils"]
+  external set_attribute    : string -> string -> Dom.node -> Dom.node = "setAttribute" [@@bs.module "./js_utils"]
+  external remove_attribute : string -> Dom.node -> Dom.node = "removeAttribute" [@@bs.module "./js_utils"]
 
-  external insert_before : Dom.node option -> Dom.node option -> Dom.node option -> unit = "insertBefore" [@@bs.send]
-  external remove_child : Dom.node option -> Dom.node option -> unit = "removeChild" [@@bs.send]
+  external insert_before : Dom.node -> Dom.node -> Dom.node -> Dom.node = "insertBefore" [@@bs.module "./js_utils"]
+  external remove_child  : Dom.node -> Dom.node -> Dom.node = "removeChild" [@@bs.module "./js_utils"]
 
-  external parent_node : Dom.node -> Dom.node = "parentNode" [@@bs.get]
-  external child_nodes : Dom.node option -> Dom.node option array = "childNodes" [@@bs.get]
+  external parent_node : Dom.node -> Dom.node = "parentNode" [@@bs.module "./js_utils"]
+  external child_node_at : int -> Dom.node -> Dom.node = "childNodeAt" [@@bs.module "./js_utils"]
 
-  external set_event_handler : Dom.node option -> string -> (('msg -> Dom.event -> unit) * 'msg) option -> unit = "setEventHandler" [@@bs.module "./js_utils"]
+  external set_event_handler : string -> (('msg -> Dom.event -> unit) * 'msg) option -> Dom.node -> Dom.node = "setEventHandler" [@@bs.module "./js_utils"]
 
-  external vdom : Dom.node -> 'msg vnode option = "vdom" [@@bs.get]
-  external set_vdom : Dom.node -> 'msg vnode -> unit = "vdom" [@@bs.set]
+  external get_vdom : Dom.node -> ('msg vnode) option = "getVdom" [@@bs.module "./js_utils"]
+  external set_vdom : 'msg vnode -> Dom.node -> Dom.node = "setVdom" [@@bs.module "./js_utils"]
 
+  let with_node = function
+    | Some node -> node
+    | _         -> failwith "node must be supplied"
 
-  let get_child_node node index =
-    Js.Array.unsafe_get (child_nodes node) index
+  let node_of_vnode = function
+    | VText vtext -> with_node vtext.node
+    | VNode vnode -> with_node vnode.node
+    | _           -> failwith "cannot get node of VNodeNone"
+
+  let set_node_of_vtext (vtext : vtext_rec) node =
+    let () = vtext.node <- Some node in node
+
+  let set_node_of_vnode (vnode : 'msg vnode_rec) node =
+    let () = vnode.node <- Some node in node
 
 
   let key_of_vnode = function
@@ -138,64 +149,6 @@ struct
 
   let keys_are_equal vn1 vn2 =
     if (key_of_vnode vn1) = (key_of_vnode vn2) then true else false
-
-
-  let patch_prop event_handler node prev_prop next_prop = match prev_prop, next_prop with
-    | PropNone, Attr (key, value) ->
-      set_attribute node key value
-
-    | PropNone, Handler (key, msg) ->
-      set_event_handler node key (Some (event_handler, msg))
-
-    | Attr (key, _), PropNone ->
-      remove_attribute node key
-
-    | Attr (prev_key, _), Handler (next_key, msg) ->
-      let () = remove_attribute node prev_key in
-      set_event_handler node next_key (Some (event_handler, msg))
-
-    | Attr (prev_key, _), Attr (next_key, next_value) when prev_key = next_key ->
-      set_attribute node next_key next_value
-
-    | Attr (prev_key, _), Attr (next_key, next_value) ->
-      let () = remove_attribute node prev_key in
-      set_attribute node next_key next_value
-
-
-    | Handler (key, _), PropNone ->
-      set_event_handler node key None
-
-    | Handler (prev_key, _), Attr (next_key, next_value) ->
-      let () = set_event_handler node prev_key None in
-      set_attribute node next_key next_value
-
-    | Handler (prev_key, prev_msg), Handler (next_key, next_msg) when prev_key = next_key ->
-      set_event_handler node next_key (Some (event_handler, next_msg))
-
-    | Handler (prev_key, _), Handler (next_key, next_msg) ->
-      let () = set_event_handler node prev_key None in
-      set_event_handler node next_key (Some (event_handler, next_msg))
-
-    | _, _ ->
-      ()
-
-
-  let rec patch_props event_handler node prev_props next_props = match prev_props, next_props with
-    | [], [] ->
-      ()
-
-    | prev_prop :: prev_props, [] ->
-      let () = patch_prop event_handler node prev_prop PropNone in
-      patch_props event_handler node prev_props []
-
-    | [], next_prop :: next_props ->
-      let () = patch_prop event_handler node PropNone next_prop in
-      patch_props event_handler node [] next_props
-
-    | prev_prop :: prev_props, next_prop :: next_props ->
-      let () = patch_prop event_handler node prev_prop next_prop in
-      patch_props event_handler node prev_props next_props
-
 
   let cache_vnode dict = function
     | vnode when (key_of_vnode vnode) <> "" ->
@@ -210,104 +163,181 @@ struct
     List.fold_left cache_vnode (Js.Dict.empty ()) vnodes
 
 
-  let rec patch_child_nodes event_handler parent index cached_vnodes prev_vnodes next_vnodes = match prev_vnodes, next_vnodes with
-    | [], [] ->
-      ()
+  let patch_prop event_handler prev_prop next_prop node = match prev_prop, next_prop with
+    | PropNone, Attr (key, value) ->
+      node
+      |> set_attribute key value
 
-    | prev_vnode :: prev_vnodes, [] ->
-      let () = patch_node event_handler parent (Delete prev_vnode) in
-      patch_child_nodes event_handler parent (index + 1) cached_vnodes prev_vnodes []
+    | PropNone, Handler (key, msg) ->
+      node
+      |> set_event_handler key (Some (event_handler, msg))
 
-    | [], next_vnode :: next_vnodes when (key_of_vnode next_vnode) = "" ->
-      let () = patch_node event_handler parent (Create (next_vnode, index)) in
-      patch_child_nodes event_handler parent (index + 1) cached_vnodes [] next_vnodes
+    | Attr (key, _), PropNone ->
+      node
+      |> remove_attribute key
 
-    | [], next_vnode :: next_vnodes ->
-      let patch_action = match Js.Dict.get cached_vnodes (key_of_vnode next_vnode) with
-        | Some prev_vnode -> (Move (prev_vnode, next_vnode, index))
-        | None            -> (Create (next_vnode, index))
-      in
-      let () = patch_node event_handler parent patch_action in
-      patch_child_nodes event_handler parent (index + 1) cached_vnodes [] next_vnodes
+    | Attr (prev_key, _), Handler (next_key, msg) ->
+      node
+      |> remove_attribute prev_key
+      |> set_event_handler next_key (Some (event_handler, msg))
 
-    | prev_vnode :: prev_vnodes, next_vnode :: next_vnodes when (keys_are_equal prev_vnode next_vnode) ->
-      let () = patch_node event_handler parent (Update (prev_vnode, next_vnode)) in
-      patch_child_nodes event_handler parent (index + 1) cached_vnodes prev_vnodes next_vnodes
+    | Attr (prev_key, _), Attr (next_key, next_value) when prev_key = next_key ->
+      node
+      |> set_attribute next_key next_value
 
-    | prev_vnode :: prev_vnodes, next_vnode :: next_vnodes ->
-      let () = patch_node event_handler parent (Delete prev_vnode) in
-      let patch_action = match Js.Dict.get cached_vnodes (key_of_vnode next_vnode) with
-        | Some prev_vnode -> (Move (prev_vnode, next_vnode, index))
-        | None            -> (Create (next_vnode, index))
-      in
-      let () = patch_node event_handler parent patch_action in
-      patch_child_nodes event_handler parent (index + 1) cached_vnodes prev_vnodes next_vnodes
+    | Attr (prev_key, _), Attr (next_key, next_value) ->
+      node
+      |> remove_attribute prev_key
+      |> set_attribute next_key next_value
 
+    | Handler (key, _), PropNone ->
+      node
+      |> set_event_handler key None
 
-  and patch_node event_handler parent = function
-    | Create (vnode, pos)                  -> create_node event_handler parent pos vnode
-    | Update (prev_vnode, next_vnode)      -> update_node event_handler prev_vnode next_vnode
-    | Move   (prev_vnode, next_vnode, pos) -> move_node event_handler parent pos prev_vnode next_vnode
-    | Delete vnode                         -> delete_node parent vnode
+    | Handler (prev_key, _), Attr (next_key, next_value) ->
+      node
+      |> set_event_handler prev_key None
+      |> set_attribute next_key next_value
 
+    | Handler (prev_key, prev_msg), Handler (next_key, next_msg) when prev_key = next_key ->
+      node
+      |> set_event_handler next_key (Some (event_handler, next_msg))
 
-  and create_node event_handler parent pos = function
-    | VText vtext ->
-      let node = create_text_node dom vtext.str in
-      let ()   = vtext.node <- node in
-      let ()   = insert_before parent node (get_child_node parent pos) in
-      ()
-
-    | VNode vnode ->
-      let node = create_element dom vnode.name in
-      let ()   = vnode.node <- node in
-      let ()   = insert_before parent node (get_child_node parent pos) in
-      let ()   = patch_props event_handler node [] vnode.props in
-      let ()   = patch_child_nodes event_handler node 0 (Js.Dict.empty ()) [] vnode.children in
-      ()
-
-    | VNodeNone ->
-      ()
-
-
-  and update_node event_handler prev_vnode next_vnode = match prev_vnode, next_vnode with
-    | VText { node }, VText next_vtext ->
-      let () = set_node_value node next_vtext.str in
-      let () = next_vtext.node <- node in
-      ()
-
-    | VNode prev_vnode, VNode next_vnode ->
-      let () = next_vnode.node <- prev_vnode.node in
-      let () = patch_props event_handler next_vnode.node prev_vnode.props next_vnode.props in
-      let () = patch_child_nodes event_handler next_vnode.node 0 (cached_vnodes_of prev_vnode.children) prev_vnode.children next_vnode.children in
-      ()
+    | Handler (prev_key, _), Handler (next_key, next_msg) ->
+      node
+      |> set_event_handler prev_key None
+      |> set_event_handler next_key (Some (event_handler, next_msg))
 
     | _, _ ->
-      ()
+      node
 
 
-  and move_node event_handler parent pos prev_vnode next_vnode =
-    let () = update_node event_handler prev_vnode next_vnode in match next_vnode with
-    | VText vtext -> insert_before parent vtext.node (get_child_node parent pos)
-    | VNode vnode -> insert_before parent vnode.node (get_child_node parent pos)
-    | VNodeNone   -> ()
+  let rec patch_props event_handler prev_props next_props node = match prev_props, next_props with
+    | [], [] ->
+      node
+
+    | prev_prop :: prev_props, [] ->
+      node
+      |> patch_prop event_handler prev_prop PropNone
+      |> patch_props event_handler prev_props []
+
+    | [], next_prop :: next_props ->
+      node
+      |> patch_prop event_handler PropNone next_prop
+      |> patch_props event_handler [] next_props
+
+    | prev_prop :: prev_props, next_prop :: next_props ->
+      node
+      |> patch_prop event_handler prev_prop next_prop
+      |> patch_props event_handler prev_props next_props
 
 
-  and delete_node parent vnode = match vnode with
-    | VText vtext -> remove_child parent vtext.node
-    | VNode vnode -> remove_child parent vnode.node
-    | VNodeNone   -> ()
+  let action_of_cached cached_vnodes next_vnode index = match Js.Dict.get cached_vnodes (key_of_vnode next_vnode) with
+    | Some prev_vnode -> (Move (prev_vnode, next_vnode, index))
+    | None            -> (Create (next_vnode, index))
+
+  let rec patch_child_nodes event_handler index cached_vnodes prev_vnodes next_vnodes parent = match prev_vnodes, next_vnodes with
+    | [], [] ->
+      parent
+
+    | prev_vnode :: prev_vnodes, [] ->
+      parent
+      |> patch_node event_handler (Delete prev_vnode)
+      |> patch_child_nodes event_handler (index + 1) cached_vnodes prev_vnodes []
+
+    | [], next_vnode :: next_vnodes when (key_of_vnode next_vnode) = "" ->
+      parent
+      |> patch_node event_handler (Create (next_vnode, index))
+      |> patch_child_nodes event_handler (index + 1) cached_vnodes [] next_vnodes
+
+    | [], next_vnode :: next_vnodes ->
+      parent
+      |> patch_node event_handler (action_of_cached cached_vnodes next_vnode index)
+      |> patch_child_nodes event_handler (index + 1) cached_vnodes [] next_vnodes
+
+    | prev_vnode :: prev_vnodes, next_vnode :: next_vnodes when (keys_are_equal prev_vnode next_vnode) ->
+      parent
+      |> patch_node event_handler (Update (prev_vnode, next_vnode))
+      |> patch_child_nodes event_handler (index + 1) cached_vnodes prev_vnodes next_vnodes
+
+    | prev_vnode :: prev_vnodes, next_vnode :: next_vnodes ->
+      parent
+      |> patch_node event_handler (Delete prev_vnode)
+      |> patch_node event_handler (action_of_cached cached_vnodes next_vnode index)
+      |> patch_child_nodes event_handler (index + 1) cached_vnodes prev_vnodes next_vnodes
 
 
-  let render node view state event_handler =
-    let next_vdom = view state in
-    let patch_action =
-      match (vdom node) with
-      | None            -> (Create (next_vdom, 0))
-      | Some prev_vdom -> (Update (prev_vdom, next_vdom))
-    in
-    let () = set_vdom node next_vdom in
-    patch_node event_handler (Some node) patch_action
+  and patch_node event_handler op parent = match op with
+    | Create (vnode, pos)                  -> create_node event_handler vnode pos parent
+    | Update (prev_vnode, next_vnode)      -> update_node event_handler prev_vnode next_vnode parent
+    | Move   (prev_vnode, next_vnode, pos) -> move_node event_handler prev_vnode next_vnode pos parent
+    | Delete vnode                         -> delete_node vnode parent
+
+
+  and create_node event_handler vnode pos parent = match vnode with
+    | VText vtext ->
+      let node =
+        create_text_node dom vtext.str
+        |> set_node_of_vtext vtext
+      in
+      parent
+      |> insert_before node (child_node_at pos parent)
+
+    | VNode vnode ->
+      let node =
+        create_element dom vnode.name
+        |> set_node_of_vnode vnode
+        |> patch_props event_handler [] vnode.props
+        |> patch_child_nodes event_handler 0 (Js.Dict.empty ()) [] vnode.children
+      in
+      parent
+      |> insert_before node (child_node_at pos parent)
+
+    | VNodeNone ->
+      parent
+
+
+
+  and update_node event_handler prev_vnode next_vnode parent = match prev_vnode, next_vnode with
+    | VText prev_vtext, VText next_vtext ->
+      let _ =
+        (with_node prev_vtext.node)
+        |> set_node_of_vtext next_vtext
+        |> set_node_value next_vtext.str
+      in
+      parent
+
+    | VNode prev_vnode, VNode next_vnode ->
+      let _ =
+        (with_node prev_vnode.node)
+        |> set_node_of_vnode next_vnode
+        |> patch_props event_handler prev_vnode.props next_vnode.props
+        |> patch_child_nodes event_handler 0 (cached_vnodes_of prev_vnode.children) prev_vnode.children next_vnode.children
+      in
+      parent
+
+    | _, _ ->
+      parent
+
+
+  and move_node event_handler prev_vnode next_vnode pos parent =
+    parent
+    |> update_node event_handler prev_vnode next_vnode
+    |> insert_before (node_of_vnode next_vnode) (child_node_at pos parent)
+
+
+  and delete_node vnode parent =
+    remove_child (node_of_vnode vnode) parent
+
+
+  let render_op prev_vdom next_vdom = match prev_vdom with
+    | None            -> (Create (next_vdom, 0))
+    | Some prev_vdom  -> (Update (prev_vdom, next_vdom))
+
+  let render next_vdom event_handler node =
+    node
+    |> set_vdom next_vdom
+    |> patch_node event_handler (render_op (get_vdom node) next_vdom)
 
   let vnode ?(key = "") name props children =
     VNode { key ; name ; props ; children ; node=None }
@@ -347,7 +377,8 @@ let app { init ; update ; view ; subscriptions; node } =
   let set_state next_state =
     let () = state := next_state in
     let () = subs := Sub.patch !subs (subscriptions !state) [] dispatch in
-    View.render node view !state event_handler
+    let _  = View.render (view !state) event_handler node in
+    ()
   in
 
   let () = dispatch_fn := (

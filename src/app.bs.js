@@ -6,6 +6,7 @@ var Block = require("bs-platform/lib/js/block.js");
 var Curry = require("bs-platform/lib/js/curry.js");
 var Js_dict = require("bs-platform/lib/js/js_dict.js");
 var Js_utils = require("./js_utils");
+var Pervasives = require("bs-platform/lib/js/pervasives.js");
 var Caml_option = require("bs-platform/lib/js/caml_option.js");
 
 function one(fn) {
@@ -118,13 +119,72 @@ var Sub = /* module */[
   /* patch */patch
 ];
 
-function set_event_handler(prim, prim$1, prim$2) {
-  Js_utils.setEventHandler(prim, prim$1, prim$2);
-  return /* () */0;
+function set_node_value(prim, prim$1) {
+  return Js_utils.setNodeValue(prim, prim$1);
 }
 
-function get_child_node(node, index) {
-  return node.childNodes[index];
+function set_attribute(prim, prim$1, prim$2) {
+  return Js_utils.setAttribute(prim, prim$1, prim$2);
+}
+
+function remove_attribute(prim, prim$1) {
+  return Js_utils.removeAttribute(prim, prim$1);
+}
+
+function insert_before(prim, prim$1, prim$2) {
+  return Js_utils.insertBefore(prim, prim$1, prim$2);
+}
+
+function remove_child(prim, prim$1) {
+  return Js_utils.removeChild(prim, prim$1);
+}
+
+function parent_node(prim) {
+  return Js_utils.parentNode(prim);
+}
+
+function child_node_at(prim, prim$1) {
+  return Js_utils.childNodeAt(prim, prim$1);
+}
+
+function set_event_handler(prim, prim$1, prim$2) {
+  return Js_utils.setEventHandler(prim, prim$1, prim$2);
+}
+
+function get_vdom(prim) {
+  return Js_utils.getVdom(prim);
+}
+
+function set_vdom(prim, prim$1) {
+  return Js_utils.setVdom(prim, prim$1);
+}
+
+function with_node(param) {
+  if (param !== undefined) {
+    return Caml_option.valFromOption(param);
+  } else {
+    return Pervasives.failwith("node must be supplied");
+  }
+}
+
+function node_of_vnode(param) {
+  if (typeof param === "number") {
+    return Pervasives.failwith("cannot get node of VNodeNone");
+  } else if (param.tag) {
+    return with_node(param[0][/* node */2]);
+  } else {
+    return with_node(param[0][/* node */4]);
+  }
+}
+
+function set_node_of_vtext(vtext, node) {
+  vtext[/* node */2] = Caml_option.some(node);
+  return node;
+}
+
+function set_node_of_vnode(vnode, node) {
+  vnode[/* node */4] = Caml_option.some(node);
+  return node;
 }
 
 function key_of_vnode(param) {
@@ -137,104 +197,6 @@ function key_of_vnode(param) {
 
 function keys_are_equal(vn1, vn2) {
   return key_of_vnode(vn1) === key_of_vnode(vn2);
-}
-
-function patch_prop(event_handler, node, prev_prop, next_prop) {
-  if (typeof prev_prop === "number") {
-    if (typeof next_prop === "number") {
-      return /* () */0;
-    } else if (next_prop.tag) {
-      var match = next_prop[0];
-      return set_event_handler(node, match[0], /* tuple */[
-                  event_handler,
-                  match[1]
-                ]);
-    } else {
-      var match$1 = next_prop[0];
-      node.setAttribute(match$1[0], match$1[1]);
-      return /* () */0;
-    }
-  } else if (prev_prop.tag) {
-    var key = prev_prop[0][0];
-    if (typeof next_prop === "number") {
-      return set_event_handler(node, key, undefined);
-    } else if (next_prop.tag) {
-      var match$2 = next_prop[0];
-      var next_msg = match$2[1];
-      var next_key = match$2[0];
-      if (key === next_key) {
-        return set_event_handler(node, next_key, /* tuple */[
-                    event_handler,
-                    next_msg
-                  ]);
-      } else {
-        set_event_handler(node, key, undefined);
-        return set_event_handler(node, next_key, /* tuple */[
-                    event_handler,
-                    next_msg
-                  ]);
-      }
-    } else {
-      var match$3 = next_prop[0];
-      set_event_handler(node, key, undefined);
-      node.setAttribute(match$3[0], match$3[1]);
-      return /* () */0;
-    }
-  } else {
-    var key$1 = prev_prop[0][0];
-    if (typeof next_prop === "number") {
-      node.removeAttribute(key$1);
-      return /* () */0;
-    } else if (next_prop.tag) {
-      var match$4 = next_prop[0];
-      node.removeAttribute(key$1);
-      return set_event_handler(node, match$4[0], /* tuple */[
-                  event_handler,
-                  match$4[1]
-                ]);
-    } else {
-      var match$5 = next_prop[0];
-      var next_value = match$5[1];
-      var next_key$1 = match$5[0];
-      if (key$1 === next_key$1) {
-        node.setAttribute(next_key$1, next_value);
-        return /* () */0;
-      } else {
-        node.removeAttribute(key$1);
-        node.setAttribute(next_key$1, next_value);
-        return /* () */0;
-      }
-    }
-  }
-}
-
-function patch_props(event_handler, node, _prev_props, _next_props) {
-  while(true) {
-    var next_props = _next_props;
-    var prev_props = _prev_props;
-    if (prev_props) {
-      var prev_props$1 = prev_props[1];
-      var prev_prop = prev_props[0];
-      if (next_props) {
-        patch_prop(event_handler, node, prev_prop, next_props[0]);
-        _next_props = next_props[1];
-        _prev_props = prev_props$1;
-        continue ;
-      } else {
-        patch_prop(event_handler, node, prev_prop, /* PropNone */0);
-        _next_props = /* [] */0;
-        _prev_props = prev_props$1;
-        continue ;
-      }
-    } else if (next_props) {
-      patch_prop(event_handler, node, /* PropNone */0, next_props[0]);
-      _next_props = next_props[1];
-      _prev_props = /* [] */0;
-      continue ;
-    } else {
-      return /* () */0;
-    }
-  };
 }
 
 function cache_vnode(dict, vnode) {
@@ -250,8 +212,115 @@ function cached_vnodes_of(vnodes) {
   return List.fold_left(cache_vnode, { }, vnodes);
 }
 
-function patch_child_nodes(event_handler, parent, _index, cached_vnodes, _prev_vnodes, _next_vnodes) {
+function patch_prop(event_handler, prev_prop, next_prop, node) {
+  if (typeof prev_prop === "number") {
+    if (typeof next_prop === "number") {
+      return node;
+    } else if (next_prop.tag) {
+      var match = next_prop[0];
+      return Js_utils.setEventHandler(match[0], /* tuple */[
+                  event_handler,
+                  match[1]
+                ], node);
+    } else {
+      var match$1 = next_prop[0];
+      return Js_utils.setAttribute(match$1[0], match$1[1], node);
+    }
+  } else if (prev_prop.tag) {
+    var key = prev_prop[0][0];
+    if (typeof next_prop === "number") {
+      return Js_utils.setEventHandler(key, undefined, node);
+    } else if (next_prop.tag) {
+      var match$2 = next_prop[0];
+      var next_msg = match$2[1];
+      var next_key = match$2[0];
+      if (key === next_key) {
+        return Js_utils.setEventHandler(next_key, /* tuple */[
+                    event_handler,
+                    next_msg
+                  ], node);
+      } else {
+        return Js_utils.setEventHandler(next_key, /* tuple */[
+                    event_handler,
+                    next_msg
+                  ], Js_utils.setEventHandler(key, undefined, node));
+      }
+    } else {
+      var match$3 = next_prop[0];
+      return Js_utils.setAttribute(match$3[0], match$3[1], Js_utils.setEventHandler(key, undefined, node));
+    }
+  } else {
+    var key$1 = prev_prop[0][0];
+    if (typeof next_prop === "number") {
+      return Js_utils.removeAttribute(key$1, node);
+    } else if (next_prop.tag) {
+      var match$4 = next_prop[0];
+      return Js_utils.setEventHandler(match$4[0], /* tuple */[
+                  event_handler,
+                  match$4[1]
+                ], Js_utils.removeAttribute(key$1, node));
+    } else {
+      var match$5 = next_prop[0];
+      var next_value = match$5[1];
+      var next_key$1 = match$5[0];
+      if (key$1 === next_key$1) {
+        return Js_utils.setAttribute(next_key$1, next_value, node);
+      } else {
+        return Js_utils.setAttribute(next_key$1, next_value, Js_utils.removeAttribute(key$1, node));
+      }
+    }
+  }
+}
+
+function patch_props(event_handler, _prev_props, _next_props, _node) {
   while(true) {
+    var node = _node;
+    var next_props = _next_props;
+    var prev_props = _prev_props;
+    if (prev_props) {
+      var prev_props$1 = prev_props[1];
+      var prev_prop = prev_props[0];
+      if (next_props) {
+        _node = patch_prop(event_handler, prev_prop, next_props[0], node);
+        _next_props = next_props[1];
+        _prev_props = prev_props$1;
+        continue ;
+      } else {
+        _node = patch_prop(event_handler, prev_prop, /* PropNone */0, node);
+        _next_props = /* [] */0;
+        _prev_props = prev_props$1;
+        continue ;
+      }
+    } else if (next_props) {
+      _node = patch_prop(event_handler, /* PropNone */0, next_props[0], node);
+      _next_props = next_props[1];
+      _prev_props = /* [] */0;
+      continue ;
+    } else {
+      return node;
+    }
+  };
+}
+
+function action_of_cached(cached_vnodes, next_vnode, index) {
+  var match = Js_dict.get(cached_vnodes, key_of_vnode(next_vnode));
+  if (match !== undefined) {
+    return /* Move */Block.__(2, [
+              match,
+              next_vnode,
+              index
+            ]);
+  } else {
+    return /* Create */Block.__(0, [
+              next_vnode,
+              index
+            ]);
+  }
+}
+
+function patch_child_nodes(event_handler, _index, cached_vnodes, _prev_vnodes, _next_vnodes, _parent) {
+  while(true) {
+    var parent = _parent;
     var next_vnodes = _next_vnodes;
     var prev_vnodes = _prev_vnodes;
     var index = _index;
@@ -262,33 +331,23 @@ function patch_child_nodes(event_handler, parent, _index, cached_vnodes, _prev_v
         var next_vnodes$1 = next_vnodes[1];
         var next_vnode = next_vnodes[0];
         if (keys_are_equal(prev_vnode, next_vnode)) {
-          patch_node(event_handler, parent, /* Update */Block.__(1, [
+          _parent = patch_node(event_handler, /* Update */Block.__(1, [
                   prev_vnode,
                   next_vnode
-                ]));
+                ]), parent);
           _next_vnodes = next_vnodes$1;
           _prev_vnodes = prev_vnodes$1;
           _index = index + 1 | 0;
           continue ;
         } else {
-          patch_node(event_handler, parent, /* Delete */Block.__(3, [prev_vnode]));
-          var match = Js_dict.get(cached_vnodes, key_of_vnode(next_vnode));
-          var patch_action = match !== undefined ? /* Move */Block.__(2, [
-                match,
-                next_vnode,
-                index
-              ]) : /* Create */Block.__(0, [
-                next_vnode,
-                index
-              ]);
-          patch_node(event_handler, parent, patch_action);
+          _parent = patch_node(event_handler, action_of_cached(cached_vnodes, next_vnode, index), patch_node(event_handler, /* Delete */Block.__(3, [prev_vnode]), parent));
           _next_vnodes = next_vnodes$1;
           _prev_vnodes = prev_vnodes$1;
           _index = index + 1 | 0;
           continue ;
         }
       } else {
-        patch_node(event_handler, parent, /* Delete */Block.__(3, [prev_vnode]));
+        _parent = patch_node(event_handler, /* Delete */Block.__(3, [prev_vnode]), parent);
         _next_vnodes = /* [] */0;
         _prev_vnodes = prev_vnodes$1;
         _index = index + 1 | 0;
@@ -298,134 +357,102 @@ function patch_child_nodes(event_handler, parent, _index, cached_vnodes, _prev_v
       var next_vnodes$2 = next_vnodes[1];
       var next_vnode$1 = next_vnodes[0];
       if (key_of_vnode(next_vnode$1) === "") {
-        patch_node(event_handler, parent, /* Create */Block.__(0, [
+        _parent = patch_node(event_handler, /* Create */Block.__(0, [
                 next_vnode$1,
                 index
-              ]));
+              ]), parent);
         _next_vnodes = next_vnodes$2;
         _prev_vnodes = /* [] */0;
         _index = index + 1 | 0;
         continue ;
       } else {
-        var match$1 = Js_dict.get(cached_vnodes, key_of_vnode(next_vnode$1));
-        var patch_action$1 = match$1 !== undefined ? /* Move */Block.__(2, [
-              match$1,
-              next_vnode$1,
-              index
-            ]) : /* Create */Block.__(0, [
-              next_vnode$1,
-              index
-            ]);
-        patch_node(event_handler, parent, patch_action$1);
+        _parent = patch_node(event_handler, action_of_cached(cached_vnodes, next_vnode$1, index), parent);
         _next_vnodes = next_vnodes$2;
         _prev_vnodes = /* [] */0;
         _index = index + 1 | 0;
         continue ;
       }
     } else {
-      return /* () */0;
+      return parent;
     }
   };
 }
 
-function patch_node(event_handler, parent, param) {
-  switch (param.tag | 0) {
+function patch_node(event_handler, op, parent) {
+  switch (op.tag | 0) {
     case 0 : 
-        return create_node(event_handler, parent, param[1], param[0]);
+        return create_node(event_handler, op[0], op[1], parent);
     case 1 : 
-        return update_node(event_handler, param[0], param[1]);
+        return update_node(event_handler, op[0], op[1], parent);
     case 2 : 
-        return move_node(event_handler, parent, param[2], param[0], param[1]);
+        return move_node(event_handler, op[0], op[1], op[2], parent);
     case 3 : 
-        return delete_node(parent, param[0]);
+        return Js_utils.removeChild(node_of_vnode(op[0]), parent);
     
   }
 }
 
-function create_node(event_handler, parent, pos, param) {
-  if (typeof param === "number") {
-    return /* () */0;
-  } else if (param.tag) {
-    var vtext = param[0];
-    var node = document.createTextNode(vtext[/* str */1]);
-    vtext[/* node */2] = node;
-    parent.insertBefore(node, parent.childNodes[pos]);
-    return /* () */0;
+function create_node(event_handler, vnode, pos, parent) {
+  if (typeof vnode === "number") {
+    return parent;
+  } else if (vnode.tag) {
+    var vtext = vnode[0];
+    var node = set_node_of_vtext(vtext, document.createTextNode(vtext[/* str */1]));
+    return Js_utils.insertBefore(node, Js_utils.childNodeAt(pos, parent), parent);
   } else {
-    var vnode = param[0];
-    var node$1 = document.createElement(vnode[/* name */1]);
-    vnode[/* node */4] = node$1;
-    parent.insertBefore(node$1, parent.childNodes[pos]);
-    patch_props(event_handler, node$1, /* [] */0, vnode[/* props */2]);
-    patch_child_nodes(event_handler, node$1, 0, { }, /* [] */0, vnode[/* children */3]);
-    return /* () */0;
+    var vnode$1 = vnode[0];
+    var node$1 = patch_child_nodes(event_handler, 0, { }, /* [] */0, vnode$1[/* children */3], patch_props(event_handler, /* [] */0, vnode$1[/* props */2], set_node_of_vnode(vnode$1, document.createElement(vnode$1[/* name */1]))));
+    return Js_utils.insertBefore(node$1, Js_utils.childNodeAt(pos, parent), parent);
   }
 }
 
-function update_node(event_handler, prev_vnode, next_vnode) {
+function update_node(event_handler, prev_vnode, next_vnode, parent) {
   if (typeof prev_vnode === "number") {
-    return /* () */0;
+    return parent;
   } else if (prev_vnode.tag) {
-    var node = prev_vnode[0][/* node */2];
     if (typeof next_vnode === "number" || !next_vnode.tag) {
-      return /* () */0;
+      return parent;
     } else {
       var next_vtext = next_vnode[0];
-      node.nodeValue = next_vtext[/* str */1];
-      next_vtext[/* node */2] = node;
-      return /* () */0;
+      Js_utils.setNodeValue(next_vtext[/* str */1], set_node_of_vtext(next_vtext, with_node(prev_vnode[0][/* node */2])));
+      return parent;
     }
   } else {
     var prev_vnode$1 = prev_vnode[0];
     if (typeof next_vnode === "number" || next_vnode.tag) {
-      return /* () */0;
+      return parent;
     } else {
       var next_vnode$1 = next_vnode[0];
-      next_vnode$1[/* node */4] = prev_vnode$1[/* node */4];
-      patch_props(event_handler, next_vnode$1[/* node */4], prev_vnode$1[/* props */2], next_vnode$1[/* props */2]);
-      patch_child_nodes(event_handler, next_vnode$1[/* node */4], 0, cached_vnodes_of(prev_vnode$1[/* children */3]), prev_vnode$1[/* children */3], next_vnode$1[/* children */3]);
-      return /* () */0;
+      patch_child_nodes(event_handler, 0, cached_vnodes_of(prev_vnode$1[/* children */3]), prev_vnode$1[/* children */3], next_vnode$1[/* children */3], patch_props(event_handler, prev_vnode$1[/* props */2], next_vnode$1[/* props */2], set_node_of_vnode(next_vnode$1, with_node(prev_vnode$1[/* node */4]))));
+      return parent;
     }
   }
 }
 
-function move_node(event_handler, parent, pos, prev_vnode, next_vnode) {
-  update_node(event_handler, prev_vnode, next_vnode);
-  if (typeof next_vnode === "number") {
-    return /* () */0;
-  } else if (next_vnode.tag) {
-    parent.insertBefore(next_vnode[0][/* node */2], parent.childNodes[pos]);
-    return /* () */0;
+function move_node(event_handler, prev_vnode, next_vnode, pos, parent) {
+  return Js_utils.insertBefore(node_of_vnode(next_vnode), Js_utils.childNodeAt(pos, parent), update_node(event_handler, prev_vnode, next_vnode, parent));
+}
+
+function delete_node(vnode, parent) {
+  return Js_utils.removeChild(node_of_vnode(vnode), parent);
+}
+
+function render_op(prev_vdom, next_vdom) {
+  if (prev_vdom !== undefined) {
+    return /* Update */Block.__(1, [
+              prev_vdom,
+              next_vdom
+            ]);
   } else {
-    parent.insertBefore(next_vnode[0][/* node */4], parent.childNodes[pos]);
-    return /* () */0;
+    return /* Create */Block.__(0, [
+              next_vdom,
+              0
+            ]);
   }
 }
 
-function delete_node(parent, vnode) {
-  if (typeof vnode === "number") {
-    return /* () */0;
-  } else if (vnode.tag) {
-    parent.removeChild(vnode[0][/* node */2]);
-    return /* () */0;
-  } else {
-    parent.removeChild(vnode[0][/* node */4]);
-    return /* () */0;
-  }
-}
-
-function render(node, view, state, event_handler) {
-  var next_vdom = Curry._1(view, state);
-  var match = node.vdom;
-  var patch_action = match !== undefined ? /* Update */Block.__(1, [
-        match,
-        next_vdom
-      ]) : /* Create */Block.__(0, [
-        next_vdom,
-        0
-      ]);
-  node.vdom = next_vdom;
-  return patch_node(event_handler, Caml_option.some(node), patch_action);
+function render(next_vdom, event_handler, node) {
+  return patch_node(event_handler, render_op(Js_utils.getVdom(node), next_vdom), Js_utils.setVdom(next_vdom, node));
 }
 
 function vnode($staropt$star, name, props, children) {
@@ -449,20 +476,34 @@ function text($staropt$star, str) {
 }
 
 var View = /* module */[
+  /* set_node_value */set_node_value,
+  /* set_attribute */set_attribute,
+  /* remove_attribute */remove_attribute,
+  /* insert_before */insert_before,
+  /* remove_child */remove_child,
+  /* parent_node */parent_node,
+  /* child_node_at */child_node_at,
   /* set_event_handler */set_event_handler,
-  /* get_child_node */get_child_node,
+  /* get_vdom */get_vdom,
+  /* set_vdom */set_vdom,
+  /* with_node */with_node,
+  /* node_of_vnode */node_of_vnode,
+  /* set_node_of_vtext */set_node_of_vtext,
+  /* set_node_of_vnode */set_node_of_vnode,
   /* key_of_vnode */key_of_vnode,
   /* keys_are_equal */keys_are_equal,
-  /* patch_prop */patch_prop,
-  /* patch_props */patch_props,
   /* cache_vnode */cache_vnode,
   /* cached_vnodes_of */cached_vnodes_of,
+  /* patch_prop */patch_prop,
+  /* patch_props */patch_props,
+  /* action_of_cached */action_of_cached,
   /* patch_child_nodes */patch_child_nodes,
   /* patch_node */patch_node,
   /* create_node */create_node,
   /* update_node */update_node,
   /* move_node */move_node,
   /* delete_node */delete_node,
+  /* render_op */render_op,
   /* render */render,
   /* vnode */vnode,
   /* text */text,
@@ -489,7 +530,8 @@ function app(param) {
   var set_state = function (next_state) {
     state[0] = next_state;
     subs[0] = patch(subs[0], Curry._1(subscriptions, state[0]), /* [] */0, dispatch);
-    return render(node, view, state[0], event_handler);
+    render(Curry._1(view, state[0]), event_handler, node);
+    return /* () */0;
   };
   dispatch_fn[0] = (function (msg) {
       var match = Curry._2(update, state[0], msg);
