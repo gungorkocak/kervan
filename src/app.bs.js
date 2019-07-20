@@ -118,13 +118,8 @@ var Sub = /* module */[
   /* patch */patch
 ];
 
-function listener(prim) {
-  Js_utils.listener(prim);
-  return /* () */0;
-}
-
-function set_handler(prim, prim$1, prim$2) {
-  Js_utils.setHandler(prim, prim$1, prim$2);
+function set_event_handler(prim, prim$1, prim$2) {
+  Js_utils.setEventHandler(prim, prim$1, prim$2);
   return /* () */0;
 }
 
@@ -150,63 +145,63 @@ function patch_prop(event_handler, node, prev_prop, next_prop) {
       return /* () */0;
     } else if (next_prop.tag) {
       var match = next_prop[0];
-      var key = match[0];
-      set_handler(node, key, Curry._1(event_handler, match[1]));
-      node.addEventListener(key, listener);
-      return /* () */0;
+      return set_event_handler(node, match[0], /* tuple */[
+                  event_handler,
+                  match[1]
+                ]);
     } else {
       var match$1 = next_prop[0];
       node.setAttribute(match$1[0], match$1[1]);
       return /* () */0;
     }
   } else if (prev_prop.tag) {
-    var key$1 = prev_prop[0][0];
+    var key = prev_prop[0][0];
     if (typeof next_prop === "number") {
-      set_handler(node, key$1, undefined);
-      node.removeEventListener(key$1, listener);
-      return /* () */0;
+      return set_event_handler(node, key, undefined);
     } else if (next_prop.tag) {
       var match$2 = next_prop[0];
       var next_msg = match$2[1];
       var next_key = match$2[0];
-      if (key$1 === next_key) {
-        return set_handler(node, next_key, Curry._1(event_handler, next_msg));
+      if (key === next_key) {
+        return set_event_handler(node, next_key, /* tuple */[
+                    event_handler,
+                    next_msg
+                  ]);
       } else {
-        set_handler(node, key$1, undefined);
-        node.removeEventListener(key$1, listener);
-        set_handler(node, next_key, Curry._1(event_handler, next_msg));
-        node.addEventListener(next_key, listener);
-        return /* () */0;
+        set_event_handler(node, key, undefined);
+        return set_event_handler(node, next_key, /* tuple */[
+                    event_handler,
+                    next_msg
+                  ]);
       }
     } else {
       var match$3 = next_prop[0];
-      set_handler(node, key$1, undefined);
-      node.removeEventListener(key$1, listener);
+      set_event_handler(node, key, undefined);
       node.setAttribute(match$3[0], match$3[1]);
       return /* () */0;
     }
   } else {
-    var key$2 = prev_prop[0][0];
+    var key$1 = prev_prop[0][0];
     if (typeof next_prop === "number") {
-      node.removeAttribute(key$2);
+      node.removeAttribute(key$1);
       return /* () */0;
     } else if (next_prop.tag) {
       var match$4 = next_prop[0];
-      var next_key$1 = match$4[0];
-      node.removeAttribute(key$2);
-      set_handler(node, next_key$1, Curry._1(event_handler, match$4[1]));
-      node.addEventListener(next_key$1, listener);
-      return /* () */0;
+      node.removeAttribute(key$1);
+      return set_event_handler(node, match$4[0], /* tuple */[
+                  event_handler,
+                  match$4[1]
+                ]);
     } else {
       var match$5 = next_prop[0];
       var next_value = match$5[1];
-      var next_key$2 = match$5[0];
-      if (key$2 === next_key$2) {
-        node.setAttribute(next_key$2, next_value);
+      var next_key$1 = match$5[0];
+      if (key$1 === next_key$1) {
+        node.setAttribute(next_key$1, next_value);
         return /* () */0;
       } else {
-        node.removeAttribute(key$2);
-        node.setAttribute(next_key$2, next_value);
+        node.removeAttribute(key$1);
+        node.setAttribute(next_key$1, next_value);
         return /* () */0;
       }
     }
@@ -454,8 +449,7 @@ function text($staropt$star, str) {
 }
 
 var View = /* module */[
-  /* listener */listener,
-  /* set_handler */set_handler,
+  /* set_event_handler */set_event_handler,
   /* get_child_node */get_child_node,
   /* key_of_vnode */key_of_vnode,
   /* keys_are_equal */keys_are_equal,
@@ -486,10 +480,8 @@ function app(param) {
   var dispatch_fn = /* record */[/* contents */(function (param) {
         return /* () */0;
       })];
-  var event_handler = function (msg) {
-    return (function (param) {
-        return Curry._1(dispatch_fn[0], msg);
-      });
+  var event_handler = function (msg, _event) {
+    return Curry._1(dispatch_fn[0], msg);
   };
   var dispatch = function (msg) {
     return Curry._1(dispatch_fn[0], msg);

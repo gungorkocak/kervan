@@ -1,5 +1,6 @@
 export var listener = function(event) {
-  event.currentTarget.handlers[event.type](event)
+  var handler = event.currentTarget.handlers[event.type]
+  handler[0](handler[1], event)
 }
 
 export var deleteKey = function(dict, key) {
@@ -7,6 +8,7 @@ export var deleteKey = function(dict, key) {
   return 0
 }
 
-export var setHandler = function(node, key, handler) {
+export var setEventHandler = function(node, key, handler) {
   (node.handlers || (node.handlers = {}))[key] = handler
+  handler ? node.addEventListener(key, listener) : node.removeEventListener(key, listener)
 }
