@@ -89,7 +89,7 @@ struct
   and vtext_rec =
     { key : string
     ; str : string
-    ; mutable node : Dom.node option
+    ; mutable node : Dom.element option
     }
 
   and 'msg vnode_rec =
@@ -97,7 +97,7 @@ struct
     ; name : string
     ; props : 'msg prop list
     ; children : 'msg vnode list
-    ; mutable node : Dom.node option
+    ; mutable node : Dom.element option
     }
 
   type 'msg patch_op =
@@ -108,23 +108,23 @@ struct
 
   external dom : Dom.document = "document" [@@bs.val]
 
-  external create_text_node : Dom.document -> string -> Dom.node = "createTextNode" [@@bs.send]
-  external create_element : Dom.document -> string -> Dom.node = "createElement" [@@bs.send]
+  external create_text_node : Dom.document -> string -> Dom.element = "createTextNode" [@@bs.send]
+  external create_element : Dom.document -> string -> Dom.element = "createElement" [@@bs.send]
 
-  external set_node_value   : string -> Dom.node -> Dom.node = "setNodeValue" [@@bs.module "./js_utils"]
-  external set_attribute    : string -> string -> Dom.node -> Dom.node = "setAttribute" [@@bs.module "./js_utils"]
-  external remove_attribute : string -> Dom.node -> Dom.node = "removeAttribute" [@@bs.module "./js_utils"]
+  external set_node_value   : string -> Dom.element -> Dom.element = "setNodeValue" [@@bs.module "./js_utils"]
+  external set_attribute    : string -> string -> Dom.element -> Dom.element = "setAttribute" [@@bs.module "./js_utils"]
+  external remove_attribute : string -> Dom.element -> Dom.element = "removeAttribute" [@@bs.module "./js_utils"]
 
-  external insert_before : Dom.node -> Dom.node -> Dom.node -> Dom.node = "insertBefore" [@@bs.module "./js_utils"]
-  external remove_child  : Dom.node -> Dom.node -> Dom.node = "removeChild" [@@bs.module "./js_utils"]
+  external insert_before : Dom.element -> Dom.element -> Dom.element -> Dom.element = "insertBefore" [@@bs.module "./js_utils"]
+  external remove_child  : Dom.element -> Dom.element -> Dom.element = "removeChild" [@@bs.module "./js_utils"]
 
-  external parent_node : Dom.node -> Dom.node = "parentNode" [@@bs.module "./js_utils"]
-  external child_node_at : int -> Dom.node -> Dom.node = "childNodeAt" [@@bs.module "./js_utils"]
+  external parent_node : Dom.element -> Dom.element = "parentNode" [@@bs.module "./js_utils"]
+  external child_node_at : int -> Dom.element -> Dom.element = "childNodeAt" [@@bs.module "./js_utils"]
 
-  external set_event_handler : string -> (('msg -> Dom.event -> unit) * 'msg) option -> Dom.node -> Dom.node = "setEventHandler" [@@bs.module "./js_utils"]
+  external set_event_handler : string -> (('msg -> Dom.event -> unit) * 'msg) option -> Dom.element -> Dom.element = "setEventHandler" [@@bs.module "./js_utils"]
 
-  external get_vdom : Dom.node -> ('msg vnode) option = "getVdom" [@@bs.module "./js_utils"]
-  external set_vdom : 'msg vnode -> Dom.node -> Dom.node = "setVdom" [@@bs.module "./js_utils"]
+  external get_vdom : Dom.element -> ('msg vnode) option = "getVdom" [@@bs.module "./js_utils"]
+  external set_vdom : 'msg vnode -> Dom.element -> Dom.element = "setVdom" [@@bs.module "./js_utils"]
 
   let with_node = function
     | Some node -> node

@@ -1,7 +1,7 @@
 open App
 
 external dom : Dom.document = "document" [@@bs.val]
-external get_by_id : Dom.document -> string -> Dom.node = "getElementById" [@@bs.send]
+external get_by_id : Dom.document -> string -> Dom.element = "getElementById" [@@bs.send]
 
 module EffectTest =
 struct
@@ -43,7 +43,7 @@ let sub_key count = if count >= 20 then "ahmet5" else "ahmet"
 
 let subscriptions state =
   [ Sub.none
-  (* ; SubTest.every ~key:(sub_key state) 1000 Increment *)
+  ; SubTest.every ~key:(sub_key state) 1000 Increment
   ]
 
 
