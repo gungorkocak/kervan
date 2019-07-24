@@ -23,8 +23,14 @@ function evt_handler(param, param$1) {
   return /* () */0;
 }
 
+function app_node(param) {
+  var container = document.createElement("div");
+  container.setAttribute("id", "app");
+  return container;
+}
+
 Jest.test("render text", (function (param) {
-        var container = document.createElement("div");
+        var container = app_node(/* () */0);
         var vdom = App$BgTestParcel.text(undefined, "hello");
         App$BgTestParcel.View[/* render */28](vdom, evt_handler, container);
         return (function (eta) {
@@ -33,16 +39,14 @@ Jest.test("render text", (function (param) {
       }));
 
 Jest.test("render element", (function (param) {
-        var container = document.createElement("div");
-        container.setAttribute("id", "app");
+        var container = app_node(/* () */0);
         var vdom = App$BgTestParcel.vnode(undefined, "div", /* [] */0, /* [] */0);
         App$BgTestParcel.View[/* render */28](vdom, evt_handler, container);
         return JestDom.toContainHTML("<div></div>", Jest.Expect[/* expect */0](container));
       }));
 
 Jest.test("render element with prop", (function (param) {
-        var container = document.createElement("div");
-        container.setAttribute("id", "app");
+        var container = app_node(/* () */0);
         var vdom = App$BgTestParcel.vnode(undefined, "div", /* :: */[
               /* Attr */Block.__(0, [/* tuple */[
                     "id",
@@ -55,8 +59,7 @@ Jest.test("render element with prop", (function (param) {
       }));
 
 Jest.test("render nested element", (function (param) {
-        var container = document.createElement("div");
-        container.setAttribute("id", "app");
+        var container = app_node(/* () */0);
         var vdom = App$BgTestParcel.vnode(undefined, "div", /* :: */[
               /* Attr */Block.__(0, [/* tuple */[
                     "id",
@@ -78,8 +81,7 @@ Jest.test("render nested element", (function (param) {
       }));
 
 Jest.test("render nested multiple layers of elements", (function (param) {
-        var container = document.createElement("div");
-        container.setAttribute("id", "app");
+        var container = app_node(/* () */0);
         var vdom = App$BgTestParcel.vnode(undefined, "div", /* :: */[
               /* Attr */Block.__(0, [/* tuple */[
                     "id",
@@ -133,6 +135,32 @@ Jest.test("render nested multiple layers of elements", (function (param) {
         return JestDom.toContainHTML("<div id=\"parent\"><div id=\"child1\"></div><div id=\"child2\"><span id=\"grandchild1\"></span><a id=\"grandchild2\" href=\"http://caravan.org\"></a></div></div>", Jest.Expect[/* expect */0](container));
       }));
 
+Jest.test("render sets event callbacks", (function (param) {
+        var container = app_node(/* () */0);
+        var dispatched_msg = /* record */[/* contents : MsgNone */0];
+        var custom_evt_handler = function (msg, param) {
+          dispatched_msg[0] = msg;
+          return /* () */0;
+        };
+        var vdom = App$BgTestParcel.vnode(undefined, "div", /* :: */[
+              /* Attr */Block.__(0, [/* tuple */[
+                    "id",
+                    "click-me"
+                  ]]),
+              /* :: */[
+                /* Handler */Block.__(1, [/* tuple */[
+                      "click",
+                      /* Clicked */[1]
+                    ]]),
+                /* [] */0
+              ]
+            ], /* [] */0);
+        App$BgTestParcel.View[/* render */28](vdom, custom_evt_handler, container);
+        unwrap(Caml_option.nullable_to_opt(container.querySelector("#click-me"))).click();
+        return Jest.Expect[/* toEqual */12](/* Clicked */[1], Jest.Expect[/* expect */0](dispatched_msg[0]));
+      }));
+
 exports.unwrap = unwrap;
 exports.evt_handler = evt_handler;
+exports.app_node = app_node;
 /*  Not a pure module */
