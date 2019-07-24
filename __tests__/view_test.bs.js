@@ -160,6 +160,75 @@ Jest.test("render sets event callbacks", (function (param) {
         return Jest.Expect[/* toEqual */12](/* Clicked */[1], Jest.Expect[/* expect */0](dispatched_msg[0]));
       }));
 
+Jest.test("render rearranges children position", (function (param) {
+        var container = app_node(/* () */0);
+        var vdom1 = App$BgTestParcel.vnode(undefined, "div", /* [] */0, /* :: */[
+              App$BgTestParcel.vnode(undefined, "div", /* :: */[
+                    /* Attr */Block.__(0, [/* tuple */[
+                          "id",
+                          "c1"
+                        ]]),
+                    /* [] */0
+                  ], /* [] */0),
+              /* :: */[
+                App$BgTestParcel.vnode(undefined, "div", /* :: */[
+                      /* Attr */Block.__(0, [/* tuple */[
+                            "id",
+                            "c2"
+                          ]]),
+                      /* [] */0
+                    ], /* [] */0),
+                /* :: */[
+                  App$BgTestParcel.text(undefined, "c3"),
+                  /* :: */[
+                    App$BgTestParcel.vnode(undefined, "div", /* :: */[
+                          /* Attr */Block.__(0, [/* tuple */[
+                                "id",
+                                "c4"
+                              ]]),
+                          /* [] */0
+                        ], /* [] */0),
+                    /* [] */0
+                  ]
+                ]
+              ]
+            ]);
+        var vdom2 = App$BgTestParcel.vnode(undefined, "div", /* [] */0, /* :: */[
+              App$BgTestParcel.vnode(undefined, "div", /* :: */[
+                    /* Attr */Block.__(0, [/* tuple */[
+                          "id",
+                          "c1"
+                        ]]),
+                    /* [] */0
+                  ], /* [] */0),
+              /* :: */[
+                App$BgTestParcel.vnode(undefined, "div", /* :: */[
+                      /* Attr */Block.__(0, [/* tuple */[
+                            "id",
+                            "c4"
+                          ]]),
+                      /* [] */0
+                    ], /* [] */0),
+                /* :: */[
+                  App$BgTestParcel.text(undefined, "c3"),
+                  /* :: */[
+                    App$BgTestParcel.vnode(undefined, "div", /* :: */[
+                          /* Attr */Block.__(0, [/* tuple */[
+                                "id",
+                                "c2"
+                              ]]),
+                          /* [] */0
+                        ], /* [] */0),
+                    /* [] */0
+                  ]
+                ]
+              ]
+            ]);
+        App$BgTestParcel.View[/* render */28](vdom1, evt_handler, container);
+        App$BgTestParcel.View[/* render */28](vdom2, evt_handler, container);
+        return JestDom.toContainHTML("<div><div id=\"c1\"></div><div id=\"c4\"></div>c3<div id=\"c2\"></div></div>", Jest.Expect[/* expect */0](container));
+      }));
+
 exports.unwrap = unwrap;
 exports.evt_handler = evt_handler;
 exports.app_node = app_node;

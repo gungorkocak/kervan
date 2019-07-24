@@ -142,3 +142,33 @@ let () = test "render sets event callbacks" begin fun () ->
   |> expect
   |> toEqual (Clicked 1)
 end
+
+let () = test "render rearranges children position" begin fun () ->
+  let container = app_node () in
+
+  let vdom1 =
+    vnode "div"
+      []
+      [ vnode "div" [ Attr("id", "c1") ] []
+      ; vnode "div" [ Attr("id", "c2") ] []
+      ; text  "c3"
+      ; vnode "div" [ Attr("id", "c4") ] []
+      ]
+  in
+  let vdom2 =
+    vnode "div"
+      []
+      [ vnode "div" [ Attr("id", "c1") ] []
+      ; vnode "div" [ Attr("id", "c4") ] []
+      ; text  "c3"
+      ; vnode "div" [ Attr("id", "c2") ] []
+      ]
+  in
+
+  let _ = View.render vdom1 evt_handler container in
+  let _ = View.render vdom2 evt_handler container in
+
+  container
+  |> expect
+  |> toContainHTML {j|<div><div id="c1"></div><div id="c4"></div>c3<div id="c2"></div></div>|j}
+end
