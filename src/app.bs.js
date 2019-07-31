@@ -326,7 +326,7 @@ function action_of_cached(cached_vnodes, next_vnode, index) {
 
 function action_of_next_cached(cached_vnodes, prev_vnode, index) {
   var match = Js_dict.get(cached_vnodes, key_of_vnode(prev_vnode));
-  if (match !== undefined) {
+  if (match !== undefined || typeof prev_vnode === "number") {
     return /* NoOp */0;
   } else {
     return /* Delete */Block.__(3, [prev_vnode]);

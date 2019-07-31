@@ -134,6 +134,31 @@ describe "render creates" begin fun () ->
     |> expect
     |> toContainHTML {j|<div id="parent"><div id="child1"></div><div id="child2"><span id="grandchild1"></span><a id="grandchild2" href="http://caravan.org"></a></div></div>|j}
   end;
+
+  test "from node none to element" begin fun () ->
+    let container = app_node () in
+
+    let vdom1 =
+      vnode "div"
+        []
+        [ View.none ]
+    in
+    let vdom2 =
+      vnode "div"
+        []
+        [ vnode "div" [ Attr("id", "node1") ] [] ]
+    in
+
+    let _ = View.render vdom1 evt_handler container in
+
+    let _ = View.render vdom2 evt_handler container in
+    let node = app_child_at 0 container in
+
+    container
+    |> get_app_node
+    |> expect
+    |> toContainElement node
+  end;
 end;
 
 describe "render sets" begin fun () ->
@@ -322,6 +347,52 @@ describe "render removes" begin fun () ->
 
     let _ = View.render vdom1 evt_handler container in
     let node = app_child_at 0 container in
+
+    let _ = View.render vdom2 evt_handler container in
+
+    container
+    |> get_app_node
+    |> expect
+    |> not_
+    |> toContainElement node
+  end;
+
+  test "unlisted node" begin fun () ->
+    let container = app_node () in
+
+    let vdom1 =
+      vnode "div"
+        []
+        [ vnode "div"
+            [ Attr("id", "node1") ]
+            []
+        ; vnode "div"
+            [ Attr("id", "node2") ]
+            []
+        ; vnode "div"
+            [ Attr("id", "node3") ]
+            []
+        ]
+    in
+    let vdom2 =
+      vnode "div"
+        []
+        [ vnode "div"
+            [ Attr("id", "node1") ]
+            []
+        ; vnode "div"
+            [ Attr("id", "node3") ]
+            []
+        ]
+    in
+
+    let _ = View.render vdom1 evt_handler container in
+
+    let node =
+      container
+      |> Element.querySelector "#node2"
+      |> unwrap
+    in
 
     let _ = View.render vdom2 evt_handler container in
 

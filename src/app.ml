@@ -241,9 +241,10 @@ struct
     | None            -> (Create (next_vnode, index))
 
   let action_of_next_cached cached_vnodes prev_vnode index =
-    match Js.Dict.get cached_vnodes (key_of_vnode prev_vnode) with
-    | Some _ -> NoOp
-    | None   -> Delete prev_vnode
+    match (Js.Dict.get cached_vnodes (key_of_vnode prev_vnode)), prev_vnode with
+    | Some _, _        -> NoOp
+    | None, VNodeNone  -> NoOp
+    | None, _          -> Delete prev_vnode
 
   let rec patch_child_nodes event_handler index cached_vnodes next_cached_vnodes prev_vnodes next_vnodes parent =
     match prev_vnodes, next_vnodes with

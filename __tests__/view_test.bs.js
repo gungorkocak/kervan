@@ -91,59 +91,80 @@ Jest.describe("render creates", (function (param) {
                 App$BgTestParcel.View[/* render */29](vdom, evt_handler, container);
                 return JestDom.toContainHTML("<div id=\"parent\"><div id=\"child\"></div></div>", Jest.Expect[/* expect */0](container));
               }));
-        return Jest.test("nested multiple layers of elements", (function (param) {
-                      var container = app_node(/* () */0);
-                      var vdom = App$BgTestParcel.vnode(undefined, "div", /* :: */[
+        Jest.test("nested multiple layers of elements", (function (param) {
+                var container = app_node(/* () */0);
+                var vdom = App$BgTestParcel.vnode(undefined, "div", /* :: */[
+                      /* Attr */Block.__(0, [/* tuple */[
+                            "id",
+                            "parent"
+                          ]]),
+                      /* [] */0
+                    ], /* :: */[
+                      App$BgTestParcel.vnode(undefined, "div", /* :: */[
                             /* Attr */Block.__(0, [/* tuple */[
                                   "id",
-                                  "parent"
+                                  "child1"
                                 ]]),
                             /* [] */0
-                          ], /* :: */[
+                          ], /* [] */0),
+                      /* :: */[
+                        App$BgTestParcel.vnode(undefined, "div", /* :: */[
+                              /* Attr */Block.__(0, [/* tuple */[
+                                    "id",
+                                    "child2"
+                                  ]]),
+                              /* [] */0
+                            ], /* :: */[
+                              App$BgTestParcel.vnode(undefined, "span", /* :: */[
+                                    /* Attr */Block.__(0, [/* tuple */[
+                                          "id",
+                                          "grandchild1"
+                                        ]]),
+                                    /* [] */0
+                                  ], /* [] */0),
+                              /* :: */[
+                                App$BgTestParcel.vnode(undefined, "a", /* :: */[
+                                      /* Attr */Block.__(0, [/* tuple */[
+                                            "id",
+                                            "grandchild2"
+                                          ]]),
+                                      /* :: */[
+                                        /* Attr */Block.__(0, [/* tuple */[
+                                              "href",
+                                              "http://caravan.org"
+                                            ]]),
+                                        /* [] */0
+                                      ]
+                                    ], /* [] */0),
+                                /* [] */0
+                              ]
+                            ]),
+                        /* [] */0
+                      ]
+                    ]);
+                App$BgTestParcel.View[/* render */29](vdom, evt_handler, container);
+                return JestDom.toContainHTML("<div id=\"parent\"><div id=\"child1\"></div><div id=\"child2\"><span id=\"grandchild1\"></span><a id=\"grandchild2\" href=\"http://caravan.org\"></a></div></div>", Jest.Expect[/* expect */0](container));
+              }));
+        return Jest.test("from node none to element", (function (param) {
+                      var container = app_node(/* () */0);
+                      var vdom1 = App$BgTestParcel.vnode(undefined, "div", /* [] */0, /* :: */[
+                            App$BgTestParcel.View[/* none */32],
+                            /* [] */0
+                          ]);
+                      var vdom2 = App$BgTestParcel.vnode(undefined, "div", /* [] */0, /* :: */[
                             App$BgTestParcel.vnode(undefined, "div", /* :: */[
                                   /* Attr */Block.__(0, [/* tuple */[
                                         "id",
-                                        "child1"
+                                        "node1"
                                       ]]),
                                   /* [] */0
                                 ], /* [] */0),
-                            /* :: */[
-                              App$BgTestParcel.vnode(undefined, "div", /* :: */[
-                                    /* Attr */Block.__(0, [/* tuple */[
-                                          "id",
-                                          "child2"
-                                        ]]),
-                                    /* [] */0
-                                  ], /* :: */[
-                                    App$BgTestParcel.vnode(undefined, "span", /* :: */[
-                                          /* Attr */Block.__(0, [/* tuple */[
-                                                "id",
-                                                "grandchild1"
-                                              ]]),
-                                          /* [] */0
-                                        ], /* [] */0),
-                                    /* :: */[
-                                      App$BgTestParcel.vnode(undefined, "a", /* :: */[
-                                            /* Attr */Block.__(0, [/* tuple */[
-                                                  "id",
-                                                  "grandchild2"
-                                                ]]),
-                                            /* :: */[
-                                              /* Attr */Block.__(0, [/* tuple */[
-                                                    "href",
-                                                    "http://caravan.org"
-                                                  ]]),
-                                              /* [] */0
-                                            ]
-                                          ], /* [] */0),
-                                      /* [] */0
-                                    ]
-                                  ]),
-                              /* [] */0
-                            ]
+                            /* [] */0
                           ]);
-                      App$BgTestParcel.View[/* render */29](vdom, evt_handler, container);
-                      return JestDom.toContainHTML("<div id=\"parent\"><div id=\"child1\"></div><div id=\"child2\"><span id=\"grandchild1\"></span><a id=\"grandchild2\" href=\"http://caravan.org\"></a></div></div>", Jest.Expect[/* expect */0](container));
+                      App$BgTestParcel.View[/* render */29](vdom1, evt_handler, container);
+                      App$BgTestParcel.View[/* render */29](vdom2, evt_handler, container);
+                      var node = app_child_at(0, container);
+                      return JestDom.toContainElement(node, Jest.Expect[/* expect */0](container.childNodes[0]));
                     }));
       }));
 
@@ -427,18 +448,72 @@ Jest.describe("render removes", (function (param) {
                 App$BgTestParcel.View[/* render */29](vdom2, evt_handler, container);
                 return JestDom.toContainElement(node, Jest.Expect[/* not_ */23](Jest.Expect[/* expect */0](container)));
               }));
-        return Jest.test("node none", (function (param) {
+        Jest.test("node none", (function (param) {
+                var container = app_node(/* () */0);
+                var vdom1 = App$BgTestParcel.vnode(undefined, "div", /* [] */0, /* :: */[
+                      App$BgTestParcel.vnode(undefined, "div", /* [] */0, /* [] */0),
+                      /* [] */0
+                    ]);
+                var vdom2 = App$BgTestParcel.vnode(undefined, "div", /* [] */0, /* :: */[
+                      App$BgTestParcel.View[/* none */32],
+                      /* [] */0
+                    ]);
+                App$BgTestParcel.View[/* render */29](vdom1, evt_handler, container);
+                var node = app_child_at(0, container);
+                App$BgTestParcel.View[/* render */29](vdom2, evt_handler, container);
+                return JestDom.toContainElement(node, Jest.Expect[/* not_ */23](Jest.Expect[/* expect */0](container.childNodes[0])));
+              }));
+        return Jest.test("unlisted node", (function (param) {
                       var container = app_node(/* () */0);
                       var vdom1 = App$BgTestParcel.vnode(undefined, "div", /* [] */0, /* :: */[
-                            App$BgTestParcel.vnode(undefined, "div", /* [] */0, /* [] */0),
-                            /* [] */0
+                            App$BgTestParcel.vnode(undefined, "div", /* :: */[
+                                  /* Attr */Block.__(0, [/* tuple */[
+                                        "id",
+                                        "node1"
+                                      ]]),
+                                  /* [] */0
+                                ], /* [] */0),
+                            /* :: */[
+                              App$BgTestParcel.vnode(undefined, "div", /* :: */[
+                                    /* Attr */Block.__(0, [/* tuple */[
+                                          "id",
+                                          "node2"
+                                        ]]),
+                                    /* [] */0
+                                  ], /* [] */0),
+                              /* :: */[
+                                App$BgTestParcel.vnode(undefined, "div", /* :: */[
+                                      /* Attr */Block.__(0, [/* tuple */[
+                                            "id",
+                                            "node3"
+                                          ]]),
+                                      /* [] */0
+                                    ], /* [] */0),
+                                /* [] */0
+                              ]
+                            ]
                           ]);
                       var vdom2 = App$BgTestParcel.vnode(undefined, "div", /* [] */0, /* :: */[
-                            App$BgTestParcel.View[/* none */32],
-                            /* [] */0
+                            App$BgTestParcel.vnode(undefined, "div", /* :: */[
+                                  /* Attr */Block.__(0, [/* tuple */[
+                                        "id",
+                                        "node1"
+                                      ]]),
+                                  /* [] */0
+                                ], /* [] */0),
+                            /* :: */[
+                              App$BgTestParcel.vnode(undefined, "div", /* :: */[
+                                    /* Attr */Block.__(0, [/* tuple */[
+                                          "id",
+                                          "node3"
+                                        ]]),
+                                    /* [] */0
+                                  ], /* [] */0),
+                              /* [] */0
+                            ]
                           ]);
                       App$BgTestParcel.View[/* render */29](vdom1, evt_handler, container);
-                      var node = app_child_at(0, container);
+                      var node = unwrap(Caml_option.nullable_to_opt(container.querySelector("#node2")));
                       App$BgTestParcel.View[/* render */29](vdom2, evt_handler, container);
                       return JestDom.toContainElement(node, Jest.Expect[/* not_ */23](Jest.Expect[/* expect */0](container.childNodes[0])));
                     }));
