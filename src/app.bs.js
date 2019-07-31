@@ -196,7 +196,13 @@ function key_of_vnode(param) {
 }
 
 function keys_are_equal(vn1, vn2) {
-  return key_of_vnode(vn1) === key_of_vnode(vn2);
+  var kvn1 = key_of_vnode(vn1);
+  var kvn2 = key_of_vnode(vn2);
+  if (kvn1 === kvn2) {
+    return kvn1 !== "";
+  } else {
+    return false;
+  }
 }
 
 function cache_vnode(dict, vnode) {
@@ -318,7 +324,16 @@ function action_of_cached(cached_vnodes, next_vnode, index) {
   }
 }
 
-function patch_child_nodes(event_handler, _index, cached_vnodes, _prev_vnodes, _next_vnodes, _parent) {
+function action_of_next_cached(cached_vnodes, prev_vnode, index) {
+  var match = Js_dict.get(cached_vnodes, key_of_vnode(prev_vnode));
+  if (match !== undefined) {
+    return /* NoOp */0;
+  } else {
+    return /* Delete */Block.__(3, [prev_vnode]);
+  }
+}
+
+function patch_child_nodes(event_handler, _index, cached_vnodes, next_cached_vnodes, _prev_vnodes, _next_vnodes, _parent) {
   while(true) {
     var parent = _parent;
     var next_vnodes = _next_vnodes;
@@ -340,7 +355,7 @@ function patch_child_nodes(event_handler, _index, cached_vnodes, _prev_vnodes, _
           _index = index + 1 | 0;
           continue ;
         } else {
-          _parent = patch_node(event_handler, action_of_cached(cached_vnodes, next_vnode, index), patch_node(event_handler, /* Delete */Block.__(3, [prev_vnode]), parent));
+          _parent = patch_node(event_handler, action_of_next_cached(next_cached_vnodes, prev_vnode, index), patch_node(event_handler, action_of_cached(cached_vnodes, next_vnode, index), parent));
           _next_vnodes = next_vnodes$1;
           _prev_vnodes = prev_vnodes$1;
           _index = index + 1 | 0;
@@ -378,34 +393,6 @@ function patch_child_nodes(event_handler, _index, cached_vnodes, _prev_vnodes, _
   };
 }
 
-function patch_node(event_handler, op, parent) {
-  switch (op.tag | 0) {
-    case 0 : 
-        return create_node(event_handler, op[0], op[1], parent);
-    case 1 : 
-        return update_node(event_handler, op[0], op[1], parent);
-    case 2 : 
-        return move_node(event_handler, op[0], op[1], op[2], parent);
-    case 3 : 
-        return Js_utils.removeChild(node_of_vnode(op[0]), parent);
-    
-  }
-}
-
-function create_node(event_handler, vnode, pos, parent) {
-  if (typeof vnode === "number") {
-    return parent;
-  } else if (vnode.tag) {
-    var vtext = vnode[0];
-    var node = set_node_of_vtext(vtext, document.createTextNode(vtext[/* str */1]));
-    return Js_utils.insertBefore(node, Js_utils.childNodeAt(pos, parent), parent);
-  } else {
-    var vnode$1 = vnode[0];
-    var node$1 = patch_child_nodes(event_handler, 0, { }, /* [] */0, vnode$1[/* children */3], patch_props(event_handler, /* [] */0, vnode$1[/* props */2], set_node_of_vnode(vnode$1, document.createElement(vnode$1[/* name */1]))));
-    return Js_utils.insertBefore(node$1, Js_utils.childNodeAt(pos, parent), parent);
-  }
-}
-
 function update_node(event_handler, prev_vnode, next_vnode, parent) {
   if (typeof prev_vnode === "number") {
     return parent;
@@ -423,14 +410,46 @@ function update_node(event_handler, prev_vnode, next_vnode, parent) {
       return parent;
     } else {
       var next_vnode$1 = next_vnode[0];
-      patch_child_nodes(event_handler, 0, cached_vnodes_of(prev_vnode$1[/* children */3]), prev_vnode$1[/* children */3], next_vnode$1[/* children */3], patch_props(event_handler, prev_vnode$1[/* props */2], next_vnode$1[/* props */2], set_node_of_vnode(next_vnode$1, with_node(prev_vnode$1[/* node */4]))));
+      patch_child_nodes(event_handler, 0, cached_vnodes_of(prev_vnode$1[/* children */3]), cached_vnodes_of(next_vnode$1[/* children */3]), prev_vnode$1[/* children */3], next_vnode$1[/* children */3], patch_props(event_handler, prev_vnode$1[/* props */2], next_vnode$1[/* props */2], set_node_of_vnode(next_vnode$1, with_node(prev_vnode$1[/* node */4]))));
       return parent;
     }
   }
 }
 
+function create_node(event_handler, vnode, pos, parent) {
+  if (typeof vnode === "number") {
+    return parent;
+  } else if (vnode.tag) {
+    var vtext = vnode[0];
+    var node = set_node_of_vtext(vtext, document.createTextNode(vtext[/* str */1]));
+    return Js_utils.insertBefore(node, Js_utils.childNodeAt(pos, parent), parent);
+  } else {
+    var vnode$1 = vnode[0];
+    var node$1 = patch_child_nodes(event_handler, 0, { }, { }, /* [] */0, vnode$1[/* children */3], patch_props(event_handler, /* [] */0, vnode$1[/* props */2], set_node_of_vnode(vnode$1, document.createElement(vnode$1[/* name */1]))));
+    return Js_utils.insertBefore(node$1, Js_utils.childNodeAt(pos, parent), parent);
+  }
+}
+
 function move_node(event_handler, prev_vnode, next_vnode, pos, parent) {
-  return Js_utils.insertBefore(node_of_vnode(next_vnode), Js_utils.childNodeAt(pos, parent), update_node(event_handler, prev_vnode, next_vnode, parent));
+  return Js_utils.insertBefore(node_of_vnode(prev_vnode), Js_utils.childNodeAt(pos, parent), update_node(event_handler, prev_vnode, next_vnode, parent));
+}
+
+function patch_node(event_handler, op, parent) {
+  if (typeof op === "number") {
+    return parent;
+  } else {
+    switch (op.tag | 0) {
+      case 0 : 
+          return create_node(event_handler, op[0], op[1], parent);
+      case 1 : 
+          return update_node(event_handler, op[0], op[1], parent);
+      case 2 : 
+          return move_node(event_handler, op[0], op[1], op[2], parent);
+      case 3 : 
+          return Js_utils.removeChild(node_of_vnode(op[0]), parent);
+      
+    }
+  }
 }
 
 function delete_node(vnode, parent) {
@@ -439,10 +458,17 @@ function delete_node(vnode, parent) {
 
 function render_op(prev_vdom, next_vdom) {
   if (prev_vdom !== undefined) {
-    return /* Update */Block.__(1, [
-              prev_vdom,
-              next_vdom
-            ]);
+    var prev_vdom$1 = prev_vdom;
+    if (typeof next_vdom === "number") {
+      return /* Delete */Block.__(3, [prev_vdom$1]);
+    } else {
+      return /* Update */Block.__(1, [
+                prev_vdom$1,
+                next_vdom
+              ]);
+    }
+  } else if (typeof next_vdom === "number") {
+    return /* NoOp */0;
   } else {
     return /* Create */Block.__(0, [
               next_vdom,
@@ -497,6 +523,7 @@ var View = /* module */[
   /* patch_prop */patch_prop,
   /* patch_props */patch_props,
   /* action_of_cached */action_of_cached,
+  /* action_of_next_cached */action_of_next_cached,
   /* patch_child_nodes */patch_child_nodes,
   /* patch_node */patch_node,
   /* create_node */create_node,

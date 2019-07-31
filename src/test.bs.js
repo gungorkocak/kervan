@@ -53,10 +53,7 @@ function sub_key(count) {
 function subscriptions(state) {
   return /* :: */[
           App$BgTestParcel.Sub[/* none */0],
-          /* :: */[
-            every(sub_key(state), 1000, /* Increment */0),
-            /* [] */0
-          ]
+          /* [] */0
         ];
 }
 

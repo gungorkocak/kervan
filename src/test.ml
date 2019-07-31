@@ -43,7 +43,7 @@ let sub_key count = if count >= 20 then "ahmet5" else "ahmet"
 
 let subscriptions state =
   [ Sub.none
-  ; SubTest.every ~key:(sub_key state) 1000 Increment
+  (* ; SubTest.every ~key:(sub_key state) 1000 Increment *)
   ]
 
 

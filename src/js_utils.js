@@ -37,7 +37,7 @@ export var parentNode = function(node) {
 }
 
 export var childNodeAt = function(index, parent) {
-  return nodeGet('childNodes', parent)[index]
+  return nodeGet('childNodes', parent)[index] || null
 }
 
 export var getVdom = function (node) {
