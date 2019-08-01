@@ -135,7 +135,7 @@ describe "render creates" begin fun () ->
     |> toContainHTML {j|<div id="parent"><div id="child1"></div><div id="child2"><span id="grandchild1"></span><a id="grandchild2" href="http://caravan.org"></a></div></div>|j}
   end;
 
-  test "from node none to element" begin fun () ->
+  test "element from node none" begin fun () ->
     let container = app_node () in
 
     let vdom1 =

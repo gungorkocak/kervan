@@ -145,7 +145,7 @@ Jest.describe("render creates", (function (param) {
                 App$BgTestParcel.View[/* render */29](vdom, evt_handler, container);
                 return JestDom.toContainHTML("<div id=\"parent\"><div id=\"child1\"></div><div id=\"child2\"><span id=\"grandchild1\"></span><a id=\"grandchild2\" href=\"http://caravan.org\"></a></div></div>", Jest.Expect[/* expect */0](container));
               }));
-        return Jest.test("from node none to element", (function (param) {
+        return Jest.test("element from node none", (function (param) {
                       var container = app_node(/* () */0);
                       var vdom1 = App$BgTestParcel.vnode(undefined, "div", /* [] */0, /* :: */[
                             App$BgTestParcel.View[/* none */32],
